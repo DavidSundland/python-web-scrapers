@@ -62,13 +62,10 @@ for link in bsObj.findAll("a",href=re.compile("^(\/event\/)")): #The link to eac
     newPage = link.attrs["href"] #extract the links
     if newPage not in pages: #A new link has been found
         counter += 1
-        print(counter)
         newhtml = "http://www.930.com" + newPage
-        print("created newhtml:",newhtml," - about to open")
         html = urlopen(newhtml)
-        print("opened newhtml")
         bsObj = BeautifulSoup(html)
-        print("BSed:",newhtml)
+        print("BSed:",newhtml) # To track progress and for debugging purposes
         dateonly = bsObj.find("h2", {"class":"dates"}).get_text() # This is now in "Fri, June 30" format (no year!)
         year = today.year
         date = datetime.datetime.strptime((dateonly.strip() + ' ' + str(year)), '%a, %B %d %Y').date()  # Added year (initially assume current year)

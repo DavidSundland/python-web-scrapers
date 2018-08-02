@@ -5,6 +5,10 @@ Python apps to scrape key information from the websites of large music venues in
 
 These web scrapers were written in support of the District Concerts website.  The District Concerts site aggregates information from the websites of over 100 Washington, DC, music venues.  The scrapers in this repository pull key information from the websites of major venues and save that info in CSV files.
 
+TWO IMPORTANT NOTES!:
+* While a couple dozen scrapers have been created, they're being moved to GitHub one or three at a time whilst cleaning up the local directory structure.
+* If you wanna run these programs, go for it, but you'll need to install Beautiful Soup to do so - https://www.crummy.com/software/BeautifulSoup/.
+
 
 ## More Detailed 'Splanation
 
@@ -45,3 +49,8 @@ The end results of the scraping can be seen at: http://www.districtconcerts.com/
 ## Admitted Shortcomings
 
 The scrapers have evolved over time - when I created my first scraper, I was still pretty fuzzy about how web scraping worked, let alone how I could glean all of the information that I wanted.  If I started anew, I would likely have attempted to make the scrapers more modular, building a library of reusable functions.  That having been said, the variation between the sites that I am scraping would likely cause modularizing a lot of the functionality to be quite challenging.  If this was code that was intended to be used by others, yes.  As personal code...  perhaps in the future.
+
+## Technologies and Tools
+
+* Written with Python
+* Programs use Beautiful Soup - https://www.crummy.com/software/BeautifulSoup/ - BS installation is required to run the programs.
