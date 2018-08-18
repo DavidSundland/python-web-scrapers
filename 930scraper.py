@@ -15,7 +15,7 @@ answer = ""
 while answer not in yesno:
     answer = input("Do you open used links file? (Avoid scraping previously scraped links?) ")
 if answer == "y" or answer == "Y":
-    with open('../scraped/930usedlinks.csv', 'r') as previousscrape:
+    with open('../scraped/usedlinks-930.csv', 'r') as previousscrape:
         reader = csv.reader(previousscrape)
         previousinfo = list(reader)
     for line in previousinfo:
@@ -47,7 +47,7 @@ venueaddress = "815 V St. NW, Washington, DC 20001"
 
 datetoday = str(today)
 backupfile = "../scraped/backupfiles/930Scraped" + datetoday + ".csv"
-csvFile = open('../scraped/930scraped.csv', 'w', newline='') #The CSV file to which the scraped info will be copied.  NOTE - need to define the 'newline' as empty to avoid empty rows in spreadsheet
+csvFile = open('../scraped/scraped-930.csv', 'w', newline='') #The CSV file to which the scraped info will be copied.  NOTE - need to define the 'newline' as empty to avoid empty rows in spreadsheet
 backupCVS = open(backupfile, 'w', newline = '') # A back-up file, just in case
 writer = csv.writer(csvFile)
 backupwriter = csv.writer(backupCVS)
@@ -166,7 +166,7 @@ while answer not in yesno:
     answer = input("Do you want to write to used links file? (Overwrite existing used links file?) ")
 if answer == "y" or answer == "Y":
     linksBackup = "../scraped/backupfiles/930usedlinks" + datetoday + ".csv"
-    linksFile = open('../scraped/930usedlinks.csv', 'w', newline='') #Save the list of links to avoid redundancy in future scraping
+    linksFile = open('../scraped/usedlinks-930.csv', 'w', newline='') #Save the list of links to avoid redundancy in future scraping
     backupLinks = open(linksBackup, 'w', newline='')
     linkswriter = csv.writer(linksFile)  #Write the file at the end so file is not overwritten if error encountered during scraping
     backupWriter = csv.writer(backupLinks)

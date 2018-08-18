@@ -15,7 +15,7 @@ answer = ""
 while answer not in yesno:
     answer = input("Do you open used links file? (Avoid scraping previously scraped links?) ")
 if answer == "y" or answer == "Y":
-    with open('../scraped/blackcatusedlinks.csv', 'r') as previousscrape: 
+    with open('../scraped/usedlinks-blackcat.csv', 'r') as previousscrape: 
         reader = csv.reader(previousscrape)
         previousinfo = list(reader)
     for line in previousinfo:
@@ -36,7 +36,7 @@ venuename = "Black Cat"
 addressurl = "https://goo.gl/maps/MbEJL3TaYbA2"
 venueaddress = "1811 14th St. NW, Washington, DC 20009"
 
-csvFile = open('../scraped/blackcatscraped.csv', 'w', newline='') #The CSV file to which the scraped info will be copied.  NOTE - need to define the 'newline' as empty to avoid empty rows in spreadsheet
+csvFile = open('../scraped/scraped-blackcat.csv', 'w', newline='') #The CSV file to which the scraped info will be copied.  NOTE - need to define the 'newline' as empty to avoid empty rows in spreadsheet
 writer = csv.writer(csvFile)
 writer.writerow(("DATE", "GENRE", "FEATURE?", "LOCAL?", "DOORS?", "PRICE", "TIME", "ARTIST WEBSITE", "ARTIST", "VENUE LINK", "VENUE NAME", "ADDRESS URL", "VENUE ADDRESS", "DESCRIPTION", "READ MORE URL", "MUSIC URL", "TICKET URL"))
 datetoday = str(today)
@@ -197,7 +197,7 @@ while answer not in yesno:
     answer = input("Do you want to write to used links file? (Overwrite existing used links file?) ")
 if answer == "y" or answer == "Y":
     linksBackup = "../scraped/BackupFiles/blackcatusedlinks" + datetoday + ".csv"
-    linksFile = open('../scraped/blackcatusedlinks.csv', 'w', newline='') #Save the list of links to avoid redundancy in future scraping
+    linksFile = open('../scraped/usedlinks-blackcat.csv', 'w', newline='') #Save the list of links to avoid redundancy in future scraping
     backupLinks = open(linksBackup, 'w', newline='')
     linkswriter = csv.writer(linksFile)  #Write the file at the end so file is not overwritten if error encountered during scraping
     backupWriter = csv.writer(backupLinks)
