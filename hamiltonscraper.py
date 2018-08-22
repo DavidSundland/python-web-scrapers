@@ -1,6 +1,9 @@
 #Scrapes The Hamilton's events, using - http://live.thehamiltondc.com/listing/  
 
 from urllib.request import urlopen #for pulling info from websites
+
+import requests
+
 from bs4 import BeautifulSoup #for manipulating info pulled from websites
 import re #real expressions
 import csv #comma-separated values
@@ -14,28 +17,21 @@ answer = ""
 while answer not in yesno:
     answer = input("Do you want to open used links file? (Skip previously-used links?) ")
 if answer == "y" or answer == "Y":
-    with open('../scraped/hamiltonusedlinks.csv', 'r') as previousscrape:  
+    with open('../scraped/usedlinks-hamilton.csv', 'r') as previousscrape:  
         reader = csv.reader(previousscrape)
         previousinfo = list(reader)
     for line in previousinfo:
-        try:
-            dadate = datetime.datetime.strptime(line[1].strip(), '%Y-%m-%d') #Newer dates in table are 2017-12-16 format.
-        except:
-            startdate = re.findall("([SMTWF][a-z]+\s[JFMASOND][a-z]{2}\s[0-9]{1,2})", line[1])[0]  # Some dates for late night events listed as range - want only first date in range
-            dadate = datetime.datetime.strptime((startdate +' 2017'), '%A %b %d %Y') #Date in table is in d.o.w. (abbrev) month (abbrev) day format. Added year (program corrected B4 end of '17)
+        dadate = datetime.datetime.strptime(line[1].strip(), '%Y-%m-%d') #Dates in table are 2017-12-16 format.
         if dadate.date() > today-datetime.timedelta(days=30):  #If used link is NOT for an event that is more than a month old, add it to list
             pageanddate.add((line[0],line[1],line[2]))  #Create list of links that have been checked before
             pages.add(line[0])
-            testhtml = "http://live.thehamiltondc.com" + line[0]
+            testhtml = "http://live.thehamiltondc.com" + line[0]  #shallow test for previously-scraped links in case event was removed from site
             try:
                 diditwork = urlopen(testhtml)
             except:
                 print(testhtml,"caused an error...")
-#        else:
-#            print(dadate.date(),"skipped")
     previousscrape.close()
 
-counter = 0  #to keep track of progress while program running
 UTFcounter = 0
 screwydate = set()  #create empty set to keep track of date oddities
 
@@ -48,17 +44,21 @@ addressurl = "https://goo.gl/maps/y2BBWdT27AG2"
 venueaddress = "600 14th St. NW, Washington, DC 20005"
 musicurl = ""
 
-csvFile = open('HamiltonScrapes.csv', 'w', newline='') #The CSV file to which the scraped info will be copied.  NOTE - need to define the 'newline' as empty to avoid empty rows in spreadsheet
+csvFile = open('../scraped/scraped-hamilton.csv', 'w', newline='') #The CSV file to which the scraped info will be copied.  NOTE - need to define the 'newline' as empty to avoid empty rows in spreadsheet
 writer = csv.writer(csvFile)
 writer.writerow(("DATE", "GENRE", "FEATURE?", "LOCAL?", "DOORS?", "PRICE", "TIME", "ARTIST WEBSITE", "ARTIST", "VENUE LINK", "VENUE NAME", "ADDRESS URL", "VENUE ADDRESS", "DESCRIPTION", "READ MORE URL", "MUSIC URL", "TICKET URL"))
 datetoday = str(datetime.date.today())
-backupfile = "BackupFiles/HamiltonScraped" + datetoday + ".csv"
+backupfile = "../scraped/BackupFiles/HamiltonScraped" + datetoday + ".csv"
 backupCSV = open(backupfile, 'w', newline = '') # A back-up file, just in case
 backupwriter = csv.writer(backupCSV)
 backupwriter.writerow(("DATE", "GENRE", "FEATURE?", "LOCAL?", "DOORS?", "PRICE", "TIME", "ARTIST WEBSITE", "ARTIST", "VENUE LINK", "VENUE NAME", "ADDRESS URL", "VENUE ADDRESS", "DESCRIPTION", "READ MORE URL", "MUSIC URL", "TICKET URL"))
 
-html = urlopen("http://live.thehamiltondc.com/listing/")
-bsObj = BeautifulSoup(html)
+# html = urlopen("http://live.thehamiltondc.com/listing/")
+
+html = "http://live.thehamiltondc.com/listing/"
+bsObj = BeautifulSoup(requests.get(html).text)
+
+#bsObj = BeautifulSoup(html)
 for link in bsObj.findAll("a",href=re.compile("^(\/event\/)")): #The link to each unique event page begins with "/event/"
     newPage = link.attrs["href"] #extract the link
     if "private-event" in newPage:  #skip the private events
@@ -67,9 +67,17 @@ for link in bsObj.findAll("a",href=re.compile("^(\/event\/)")): #The link to eac
     if newPage not in pages: #A new link has been found
 #        counter += 1
         newhtml = "http://live.thehamiltondc.com" + newPage
-        eventhtml = urlopen(newhtml)
-        eventObj = BeautifulSoup(eventhtml)
-        date = eventObj.find("h2", {"class":"dates"}).get_text() # This includes the day of the week, the year and, sometimes, extra spaces.  The spreadsheet doesn't care. (Including year good for E.O.Y.)
+        print(newhtml)
+#        eventhtml = urlopen(newhtml)
+#        eventObj = BeautifulSoup(eventhtml)
+
+        eventObj = BeautifulSoup(requests.get(newhtml).text)
+
+
+        try:
+            date = eventObj.find("h2", {"class":"dates"}).get_text() # This includes the day of the week, the year and, sometimes, extra spaces.
+        except:
+            continue  # after a site redesign, some dead links were left behind.
         year = today.year
         try:
             dadate = datetime.datetime.strptime((date.strip() + ' ' + str(year)), '%A %b %d %Y')
@@ -179,7 +187,7 @@ for link in bsObj.findAll("a",href=re.compile("^(\/event\/)")): #The link to eac
                 print("Using UTF encoding for artist and description", date)
         pages.add(newPage)
         pageanddate.add((newPage,date,datetoday))  # Add link to list, paired with event date and today's date
-        print(newhtml,date)
+#        print(newhtml,date)
 csvFile.close()
 backupCSV.close()
 
@@ -189,8 +197,8 @@ answer = ""
 while answer not in yesno:
     answer = input("Do you want to write to used links file? (Overwrite existing used links file?) ")
 if answer == "y" or answer == "Y":
-    linksBackup = "BackupFiles/HamiltonUsedLinks" + datetoday + ".csv"
-    linksFile = open('HamiltonUsedLinks.csv', 'w', newline='') #Save the list of links to avoid redundancy in future scraping
+    linksBackup = "../scraped/BackupFiles/HamiltonUsedLinks" + datetoday + ".csv"
+    linksFile = open('../scraped/usedlinks-hamilton.csv', 'w', newline='') #Save the list of links to avoid redundancy in future scraping
     backupLinks = open(linksBackup, 'w', newline='')
     linkswriter = csv.writer(linksFile)  #Write the file at the end so file is not overwritten if error encountered during scraping
     backupWriter = csv.writer(backupLinks)
