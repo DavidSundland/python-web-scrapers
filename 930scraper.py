@@ -57,12 +57,14 @@ backupwriter.writerow(("DATE", "GENRE", "FEATURE?", "LOCAL?", "DOORS?", "PRICE",
 
 html = urlopen("http://www.930.com/#upcoming-shows-container")
 # html = urlopen("http://www.930.com/")
-bsObj = BeautifulSoup(html)
-for link in bsObj.findAll("a",href=re.compile("^(\/event\/)")): #The link to each unique event page begins with "/event/"
+firstBS = BeautifulSoup(html)
+print("got initial bs; bs: ", firstBS)
+for link in firstBS.findAll("a",href=re.compile("^(\/event\/)")): #The link to each unique event page begins with "/event/"
     newPage = link.attrs["href"] #extract the links
     if newPage not in pages: #A new link has been found
         counter += 1
         newhtml = "http://www.930.com" + newPage
+        print("got newhtml:", newhtml)
         html = urlopen(newhtml)
         bsObj = BeautifulSoup(html)
         print("BSed:",newhtml) # To track progress and for debugging purposes

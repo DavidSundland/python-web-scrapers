@@ -101,6 +101,7 @@ for link in bsObj.findAll("a",href=re.compile("^(http\:\/\/www\.blackcatdc\.com\
             continue
         showtextps = bsObj.findAll("p", {"class":"show-text"})
         price = "Free"
+        starttime = "aintnone"
         for oneresult in showtextps:
 #            print(oneresult.get_text())
             try:
@@ -108,7 +109,7 @@ for link in bsObj.findAll("a",href=re.compile("^(http\:\/\/www\.blackcatdc\.com\
                 timesplit = longtime.split(":")
                 starttime = str(int(timesplit[0]) + 12) + ":" + timesplit[1]  # Add 12 to the time to make it p.m. (all Black Cat events are pm (I hope))
             except:
-                macroeconomics = "but and the"
+                hey = "how about that weather"
             try:  # Some of the show-text paragraphs have no content...
                 if "Adv" in oneresult.get_text() and "DOS" in oneresult.get_text():
                     price = re.findall("\$[0-9]{1,3}", oneresult.get_text())[0] + " in advance, " + re.findall("\$[0-9]{1,3}", oneresult.get_text())[1] + " D.O.S."
@@ -118,6 +119,9 @@ for link in bsObj.findAll("a",href=re.compile("^(http\:\/\/www\.blackcatdc\.com\
                 freedom = "not free"
         if price == "Free":
             print("Make sure that",date,artist,"is indeed free")
+        if starttime == "aintnone":
+            print("Skipping", newhtml, ", time not found.")
+            continue
         try:
             artistweb = bsObj.find("h1", {"class":"headline"}).find("a").attrs["href"]  #THIS finds the first instance of an h1 with a class of "headline", then digs deeper, finding the first instance w/in that li of a child a, and pulls the href.  BUT - since some artists may not have link, using try/except
         except:

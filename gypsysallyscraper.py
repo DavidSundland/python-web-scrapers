@@ -29,9 +29,9 @@ if answer == "y" or answer == "Y":
             try: #test to ensure that previously-scraped events are still valid...
                 diditwork = requests.get(url)
                 if diditwork.status_code > 299:
-                    print(testhtml,"caused an error...")
+                    print(testurl,"caused an error...")
             except:
-                print(testhtml,"caused an error...")
+                print(testurl,"caused an error...")
     previousscrape.close()
 
 counter = 0 # A counter to track progress

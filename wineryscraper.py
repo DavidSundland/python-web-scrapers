@@ -4,7 +4,7 @@
 
 from urllib.request import urlopen #for pulling info from websites
 from bs4 import BeautifulSoup #for manipulating info pulled from websites
-import re #real expressions
+import re #regular expressions
 import csv #comma-separated values
 import datetime
 from datetime import date # necessary for properly calculating time differences in months
@@ -50,11 +50,11 @@ backupwriter.writerow(("DATE", "GENRE", "FEATURE?", "LOCAL?", "DOORS?", "PRICE",
 
 # Scraping 1 month at a time, creating URL to match: https://citywinery.com/washingtondc/tickets.html?view=calendar&month=6&year=2018
 for monthrange in range(0,2):  # look at this month & next; possibly look farther in future
-    month = ((today+relativedelta(months=+monthrange)).strftime("%m")).replace("0","")
+    month = ((today+relativedelta(months=+monthrange)).strftime("%m")).lstrip("0")
     monthurl = "https://citywinery.com/washingtondc/tickets.html?view=calendar&month="  + month + "&year=" + (today+relativedelta(months=+monthrange)).strftime("%Y")
     html = urlopen(monthurl)
     bsObj = BeautifulSoup(html)
-    for link in bsObj.findAll("a",href=re.compile(".+[0-9]{1,2}\-[0-9]{1,2}\-[12][0-9].+")): #The link to each unique event page includes the event date in 6-29-18 format
+    for link in bsObj.findAll("a",href=re.compile(".+[01]?[0-9]\-[0-3]?[0-9]\-[12][0-9].+|.+[01][0-9][0-3][0-9][12][0-9].+")): #The link to each unique event page includes the event date in 6-29-18 format OR 062918 format
         newPage = link.attrs["href"] #extract the links
         if newPage not in pages: #A new link has been found
             pages.add(newPage)
@@ -78,11 +78,12 @@ for monthrange in range(0,2):  # look at this month & next; possibly look farthe
                             musicurl = ""  # In case there are iframes, but no videos
             except:
                 musicurl = ""
-            artistlong = bsObj.find("h1", {"class":"page-title"}).get_text() #This gets the event name (including extra crap)
-            artist = re.findall("(.+)\s*\-*\s*[0-9]{1,2}\/[0-9]{1,2}\/[0-9]{1,2}",artistlong)[0]
-            artist = artist.strip()
-            artist = artist.strip("-")
-            artist = artist.strip()
+            artistlong = bsObj.find("h1", {"class":"page-title"}).get_text().strip() #This gets the event name (including extra crap)
+            artist = artistlong.split(" - ")[0].strip() # event name is 1st part of title, separated from date by " - "
+#            artist = re.findall("(.+)\s*\-*\s*[0-9]{1,2}\/[0-9]{1,2}\/[0-9]{1,2}",artistlong)[0]
+#            artist = artist.strip()
+#            artist = artist.strip("-")
+#            artist = artist.strip()
             dateonly = re.findall("[0-9]{1,2}\/[0-9]{1,2}\/[0-9]{1,2}",artistlong)[0]
             try:
                 readmore = bsObj.find("li", {"class":"website"}).find("a").attrs["href"]
@@ -111,7 +112,15 @@ for monthrange in range(0,2):  # look at this month & next; possibly look farthe
                 price = maxprice
             else:
                 price = "$" + str(minprice) + " to $" + str(maxprice)
-            description = bsObj.find("div", {"class":"value"}).get_text()
+#            description = bsObj.find("div", {"class":"value"}).get_text()
+            descriptionWad = bsObj.find("div", {"class":"value"})
+            descriptionParagraphs = descriptionWad.findAll("p")
+            description = ""
+            for paragraph in descriptionParagraphs:
+                if re.search("^\$[0-9]+",paragraph.get_text()): # get rid of paragraphs that merely provide pricing info
+                    continue
+                else:
+                    description += paragraph.get_text()
             description = description.replace("\n"," ") # Eliminates annoying carriage returns 
             description = description.replace("\r"," ") # Eliminates annoying carriage returns 
             if (len(description) > 700): # If the description is too long...
