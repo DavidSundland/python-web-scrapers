@@ -1,10 +1,14 @@
 #Scrapes Blues Alley events, using - http://www.bluesalley.com/events.cfm  
 
+
 from urllib.request import urlopen #for pulling info from websites
 from bs4 import BeautifulSoup #for manipulating info pulled from websites
 import re #real expressions
 import csv #comma-separated values
 import datetime
+
+def compactWord(string):
+    return re.sub('[\s\-\_\/\.]','',string).lower()
 
 pages = set() #create an empty set of pages
 pageanddate = set() #For list of used links WITH event date and date on which info was added to file
@@ -28,7 +32,14 @@ if answer == "y" or answer == "Y":
 loopcounter = 0 # A counter to track progress
 # UTFcounter = 0 # Counter for number of encoding problems (thusfar not needed for Blues Alley)
 
-local = ""  # Add test for local in future  Start w/ Twins list; add "Peter Fraize Quintet", "Bohemian Caverns Jazz Orchestra", "512 Experience", "Lena Seikaly - Steve Herberman Duo", "Spur of the Moment", "Owen Adams"
+handle = open('local_musicians.txt','r') # opens running list of local musicians (file shared with Twins Jazz)
+text = handle.read()
+# compactText = compactWord(text)
+locallist = compactWord(text).split(',')
+handle.close()
+
+
+# local = ""
 doors = " "
 genre = "Jazz & Blues"
 venuelink = "http://www.bluesalley.com/"
@@ -59,6 +70,10 @@ for link in bsObj.findAll("a",href=re.compile(".+home\.event.+")): #The link to 
         artistweb = newhtml
         musicurl = ""
         artist = bsObj.find("h1", {"class":"event-title"}).get_text() #This gets the event name (including extra description in some cases)
+        if compactWord(artist) in locallist:
+            local = "Yes"
+        else:
+            local = ""
         if "closed" in artist.lower():
             continue
         try:  #When artist website is provided, it is in one of the "description" paragraphs (always the fourth?)

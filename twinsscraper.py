@@ -2,6 +2,8 @@
 # Previous headings:  "DATE", "TIME", "PRICE", "ARTIST", "DESCRIPTION", "READ MORE URL", "EVENT URL"
 # Previous variables:  dateonly, starttime, price, artist, description, readmore, newhtml
 # date becomes dateonly, NEED artistpic, artistweb becomes newhtml, NEED musicurl, ticketweb becomes newhtml
+print("CHANGE FILE TO IMPORT LOCAL ARTISTS FROM SEPARATE FILE (SHARED WITH BLUES ALLEY")
+quit()
 from urllib.request import urlopen #for pulling info from websites
 from bs4 import BeautifulSoup #for manipulating info pulled from websites
 import re #real expressions
@@ -37,8 +39,8 @@ if answer == "y" or answer == "Y":
 progresscounter = 0  #to keep track of progress while program running
 UTFcounter = 0
 
-local = ""  # Add test for local in future
-locallist = ("Reginald Cyntje","The Twins Jazz Orchestra","Bobby Muncy","Tim Whalen","Jazz Band Master Class","Marty Nau","Danielle Wertz Feat. Mark Meadows","Danielle Wertz","Mark Meadows","Dial 251","Dial 251 for Jazz","Dial 251 For Jazz","Project Natale","Joe Vetter Quartet","Kenny Rittenhouse","Joe Vetter", "Abby Schaffer", "Rick Alberico", "Irene Jalenti", "Theo Rosenfeld", "Sarah Hughes", "Justin Lees","Jon Steele","Josh Irving","Encantada","Nicole Saphos Quartet","Pavel Urkiza","Jeff Antoniuk","Levon Mikaelian","United Shades Of Artistry","BSQ","Sarah Wilcox","Sotê","Gw Jazz","GW Jazz","Julian Berkowitz","Wade Beach","Griffith Kazmierczak","Ben Sher Quartet","Sam Lee","Radio Jazzhead Project","Bruce Williams","Hope Udobi","The 5-1-2 Experience","Dan Wallace","Matt Horanzy","Keith Butler Trio","Shannon Gunn")
+local = ""
+locallist = ("Reginald Cyntje","The Twins Jazz Orchestra","Bobby Muncy","Tim Whalen","Jazz Band Master Class","Marty Nau","Danielle Wertz Feat. Mark Meadows","Danielle Wertz","Mark Meadows","Dial 251","Dial 251 for Jazz","Dial 251 For Jazz","Project Natale","Joe Vetter Quartet","Kenny Rittenhouse","Joe Vetter", "Abby Schaffer", "Rick Alberico", "Irene Jalenti", "Theo Rosenfeld", "Sarah Hughes", "Justin Lees","Jon Steele","Josh Irving","Encantada","Nicole Saphos Quartet","Pavel Urkiza","Jeff Antoniuk","Levon Mikaelian","United Shades Of Artistry","BSQ","Sarah Wilcox","Sotê","Gw Jazz","GW Jazz","Julian Berkowitz","Wade Beach","Griffith Kazmierczak","Ben Sher Quartet","Sam Lee","Radio Jazzhead Project","Bruce Williams","Hope Udobi","The 5-1-2 Experience","Dan Wallace","Matt Horanzy","Keith Butler Trio","Shannon Gunn","Herb Scott Quartet","Susan Jones Quartet","KW Big Band","Gopal, Gunn & Gleason","Samuel Prather & Groove Orchestra","Samuel Prather","This Is Merely an Ensemble","The Tritone Trio","The Voyage","Jeff Weintraub")
 genre = "Jazz & Blues"  # Add test for genre in future
 venuelink = "http://www.twinsjazz.com/"
 venuename = "Twins Jazz"
@@ -79,7 +81,10 @@ for link in bsObj.findAll("a",href=re.compile("^(index\.cfm\?fuseaction\=home\.e
         if dadate > today+datetime.timedelta(days=61):  #If event is more than 2 months away, skip it for now (a lot can happen in 2 months!):
             continue
         starttime = str(int(re.findall("[\n\r]([0-9]+)", datelong)[0])+12)+":00" #This extracts the number portion of the time, converts it to an integer, adds 12 ('cuz all Twins events in eve), converts to a string, and adds :00.
-        price = re.findall("\$[0-9]+", datelong)[0]  #This extracts the ticket price
+        if "free" in datelong.lower():
+            price = 0
+        else:
+            price = re.findall("\$[0-9]+", datelong)[0]  #This extracts the ticket price
         artistname = bsObj.find("h2", {"class":"artist-name"}).get_text() #This gets the artist's name
         if len(artistname) > 6:
             words = artistname.split()  #The artist name may be ALL CAPS, so if it's more than 6 characters, we're converting it to proper capitalization

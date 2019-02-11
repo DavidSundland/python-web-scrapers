@@ -1,6 +1,9 @@
 #Scrapes 9:30 Club's concerts
 
 from urllib.request import urlopen #for pulling info from websites
+
+import requests  # due to changes in site's encoding, needed to add this import
+
 from bs4 import BeautifulSoup #for manipulating info pulled from websites
 import re #real expressions
 import csv #comma-separated values
@@ -55,19 +58,24 @@ writer.writerow(("DATE", "GENRE", "FEATURE?", "LOCAL?", "DOORS?", "PRICE", "TIME
 backupwriter.writerow(("DATE", "GENRE", "FEATURE?", "LOCAL?", "DOORS?", "PRICE", "TIME", "ARTIST WEBSITE", "ARTIST", "VENUE LINK", "VENUE NAME", "ADDRESS URL", "VENUE ADDRESS", "DESCRIPTION", "READ MORE URL", "MUSIC URL", "TICKET URL"))
 
 
-html = urlopen("http://www.930.com/#upcoming-shows-container")
+# html = urlopen("https://www.930.com/#upcoming-shows-container")  # due to changes in site's encoding, this no longer works
 # html = urlopen("http://www.930.com/")
-firstBS = BeautifulSoup(html)
+# firstBS = BeautifulSoup(html)
+
+html = "https://www.930.com/#upcoming-shows-container"
+firstBS = BeautifulSoup(requests.get(html).text)
+
 print("got initial bs; bs: ", firstBS)
 for link in firstBS.findAll("a",href=re.compile("^(\/event\/)")): #The link to each unique event page begins with "/event/"
     newPage = link.attrs["href"] #extract the links
+    print(newPage)
     if newPage not in pages: #A new link has been found
         counter += 1
-        newhtml = "http://www.930.com" + newPage
+        newhtml = "https://www.930.com" + newPage
         print("got newhtml:", newhtml)
-        html = urlopen(newhtml)
-        bsObj = BeautifulSoup(html)
-        print("BSed:",newhtml) # To track progress and for debugging purposes
+#        html = urlopen(newhtml)  # due to changes in site's encoding, this no longer works
+        bsObj = BeautifulSoup(requests.get(newhtml).text)
+        # print("BSed:",newhtml) # To track progress and for debugging purposes
         dateonly = bsObj.find("h2", {"class":"dates"}).get_text() # This is now in "Fri, June 30" format (no year!)
         year = today.year
         date = datetime.datetime.strptime((dateonly.strip() + ' ' + str(year)), '%a, %B %d %Y').date()  # Added year (initially assume current year)

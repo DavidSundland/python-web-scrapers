@@ -1,6 +1,9 @@
 #Scrapes Anthem's events, using - http://www.theanthemdc.com/calendar/  
 
 from urllib.request import urlopen #for pulling info from websites
+
+import requests  # due to changes in site's encoding, needed to add this import
+
 from bs4 import BeautifulSoup #for manipulating info pulled from websites
 import re #real expressions
 import csv #comma-separated values
@@ -35,7 +38,7 @@ UTFcounter = 0
 local = ""  # Add test for local in future
 doors = " "
 genre = "Rock & Pop"  # Add test for genre in future
-venuelink = "http://www.theanthemdc.com/"
+venuelink = "https://www.theanthemdc.com/"
 venuename = "Anthem"
 addressurl = "https://goo.gl/maps/QHoa2MXg5762"
 venueaddress = "901 Wharf Street SW, Washington, DC 20024"
@@ -49,17 +52,24 @@ backupCSV = open(backupfile, 'w', newline = '') # A back-up file, just in case
 backupwriter = csv.writer(backupCSV)
 backupwriter.writerow(("DATE", "GENRE", "FEATURE?", "LOCAL?", "DOORS?", "PRICE", "TIME", "ARTIST WEBSITE", "ARTIST", "VENUE LINK", "VENUE NAME", "ADDRESS URL", "VENUE ADDRESS", "DESCRIPTION", "READ MORE URL", "MUSIC URL", "TICKET URL"))
 
-html = urlopen("http://www.theanthemdc.com/calendar/")
-bsObj = BeautifulSoup(html)
+# html = urlopen("https://www.theanthemdc.com/calendar/")  # due to changes in site's encoding, this no longer works
+# bsObj = BeautifulSoup(html)
+
+html = "https://www.theanthemdc.com/calendar/"
+bsObj = BeautifulSoup(requests.get(html).text)
+
+# print(bsObj)
+
 for link in bsObj.findAll("a",href=re.compile("^(\/event\/)")): #The link to each unique event page begins with "/event/"
     newPage = link.attrs["href"] #extract the links
     if newPage not in pages: #A new link has been found
-        newhtml = "http://www.theanthemdc.com" + newPage
+        newhtml = "https://www.theanthemdc.com" + newPage
         print("newhtml:",newhtml, ", about to open link")
-        bshtml = urlopen(newhtml)
+#        bshtml = urlopen(newhtml) # due to changes in site's encoding, this no longer works
 #        print("opened link")
-        bsObj = BeautifulSoup(bshtml)
+#        bsObj = BeautifulSoup(bshtml)
 #        print("successfully created BS object")
+        bsObj = BeautifulSoup(requests.get(newhtml).text)
         try:
             bsObj.find("h3", {"class":"cancelled"}).get_text()  #if this DOESN'T fail, event is cancelled - skip it
             continue

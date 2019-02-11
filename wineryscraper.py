@@ -33,7 +33,7 @@ UTFcounter = 0 # Counter for number of encoding problems (thusfar not needed for
 
 local = ""  # Add test for local in future?  Start w/ Twins list?
 doors = " "
-genre = "Jazz & Blues"
+genre = "Rock & Pop"
 venuelink = "https://citywinery.com/washingtondc/"
 venuename = "City Winery"
 addressurl = "https://goo.gl/maps/jhjUuxZ44sp"
@@ -97,21 +97,28 @@ for monthrange in range(0,2):  # look at this month & next; possibly look farthe
             try:
                 starttime = re.findall("([0-9]{1,2}\:[0-6][0-9]\s*[aApP][mM])\s*[sS][tT][aA][rR][tT]",longtime)[0]
             except:
-                print("Could not find start time for event above...")
-                starttime = "8:00 PM"
+                try:
+                    starttime = re.findall("([0-9]{1,2}\s*[aApP][mM])\s*[sS][tT][aA][rR][tT]",longtime)[0]
+                except:
+                    print("Found no start time for above page, skipping.  Event name:", artist)
+                    continue
             prices = bsObj.findAll("span", {"class":"price"})
-            maxprice=0
-            minprice=10000
-            for oneprice in prices:
-                oneticket = int(re.findall("([0-9]{1,2})\.[0-9]{2}",oneprice.get_text())[0])
-                if (oneticket < minprice):
-                    minprice = oneticket
-                if (oneticket > maxprice):
-                    maxprice = oneticket
-            if (maxprice == minprice):
-                price = maxprice
+            if len(prices) == 0:
+                print("Found no price for above link, so skipping it.  Event name:", artist)
+                continue  # Events with no price are non-music events (always? almost always?)
             else:
-                price = "$" + str(minprice) + " to $" + str(maxprice)
+                maxprice=0
+                minprice=10000
+                for oneprice in prices:
+                    oneticket = int(re.findall("([0-9]{1,2})\.[0-9]{2}",oneprice.get_text())[0])
+                    if (oneticket < minprice):
+                        minprice = oneticket
+                    if (oneticket > maxprice):
+                        maxprice = oneticket
+                if (maxprice == minprice):
+                    price = maxprice
+                else:
+                    price = "$" + str(minprice) + " to $" + str(maxprice)
 #            description = bsObj.find("div", {"class":"value"}).get_text()
             descriptionWad = bsObj.find("div", {"class":"value"})
             descriptionParagraphs = descriptionWad.findAll("p")
@@ -120,7 +127,7 @@ for monthrange in range(0,2):  # look at this month & next; possibly look farthe
                 if re.search("^\$[0-9]+",paragraph.get_text()): # get rid of paragraphs that merely provide pricing info
                     continue
                 else:
-                    description += paragraph.get_text()
+                    description += paragraph.get_text() + " "
             description = description.replace("\n"," ") # Eliminates annoying carriage returns 
             description = description.replace("\r"," ") # Eliminates annoying carriage returns 
             if (len(description) > 700): # If the description is too long...

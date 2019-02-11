@@ -82,11 +82,15 @@ for link in bsObj.findAll("a",href=re.compile("^(\/event\/)")): #The link to eac
         try:
             dadate = datetime.datetime.strptime((date.strip() + ' ' + str(year)), '%A %b %d %Y')
         except:  # Ran into problems where date range was provided - sometimes multi-date package of tickets was being offered, sometimes they give next day as end date of late night shows
-            print("*****\n****Ran into date problem for",newhtml,date," - LOFT date range, ticket series, or other issue?****\n****")
-            pages.add(newPage)
-            pageanddate.add((newPage,date,datetoday))  # Add link to list, paired with event date and today's date
-            screwydate.add(newhtml)
-            continue
+            try:
+                startdate = re.findall("([SMTWF][a-z]+\s[JFMASOND][a-z]+\s[0-9]{2})", date)[0]
+                dadate = datetime.datetime.strptime((startdate.strip() + ' ' + str(year)), '%A %b %d %Y')
+            except:
+                print("*****\n****Ran into date problem for",newhtml,date," - Ticket series, or other issue?****\n****")
+                pages.add(newPage)
+                pageanddate.add((newPage,date,datetoday))  # Add link to list, paired with event date and today's date
+                screwydate.add(newhtml)
+                continue
         if dadate.date() < today - datetime.timedelta(days=30):  #If adding the year results in a date more than a month in the past, then event must be in the next year 
             dadate = datetime.datetime.strptime((date.strip() + ' ' + str(year + 1)), '%A %b %d %Y')
         date = dadate.date()
@@ -100,6 +104,7 @@ for link in bsObj.findAll("a",href=re.compile("^(\/event\/)")): #The link to eac
             price = "Free!"
         artist = eventObj.find("h1", {"class":"headliners summary"}).get_text() # Event / top artist name
         artist = artist.replace("Free Late Night Music in The Loft with ","") #Get rid of unnecessary text
+        artist = artist.replace("Free Late Night in The Loft with ","")
         artist = artist.replace("Late Night in The Loft with ","")
         artist = artist.replace(" (Early Show)","")
         artist = artist.replace(" (Late Show)","")
