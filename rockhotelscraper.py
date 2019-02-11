@@ -56,6 +56,8 @@ bsObj = BeautifulSoup(html)
 for link in bsObj.findAll("a",href=re.compile("^(http\:\/\/www\.rockandrollhoteldc\.com\/calendar\/)")): #The link to each unique event page begins with "http://www.rockandrollhoteldc.com/calendar/"
     newPage = link.attrs["href"] #extract the links
     if newPage not in pages: #A new link has been found
+        if "trivia-night" in newPage:
+            continue
         newhtml = newPage
         html = urlopen(newhtml)
         print(newhtml)
