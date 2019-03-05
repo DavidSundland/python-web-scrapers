@@ -75,7 +75,7 @@ for link in bsObj.findAll("a",href=re.compile("^(\/event\/)")): #The link to eac
             price = "Free!"  # In the first instance in which price-range failed, event was free...
             print("Verify that ", newhtml, " is indeed free!!!!!!!")
         artist = bsObj.find("h1", {"class":"headliners"}).get_text().strip() # Event name
-        if "sold out" in artist or "Sold Out" in artist or "SOLD OUT" in artist or "MIXTAPE" in artist or "Peach Pit" in artist or "KARAOKE" in artist or "Karaoke" in artist or "Liberation Dance Party" in artist or "Astronomy on Tap" in artist or "Nerd Nite" in artist or "90s TRACKS" in artist or "WIG & DISCO" in artist or "daft lunch" in artist:
+        if "sold out" in artist.lower() or "MIXTAPE" in artist.upper() or "Peach Pit" in artist or "KARAOKE" in artist.upper() or "Liberation Dance Party" in artist or "Astronomy on Tap" in artist or "NERD NITE" in artist.upper() or "90S TRACKS" in artist.upper() or "WIG & DISCO" in artist or "daft lunch" in artist or "DARK & STORMY" in artist.upper():
             continue
         artist = artist.replace(" [EARLY SHOW]","")
         artist = artist.replace(" [late event]","")

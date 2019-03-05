@@ -67,7 +67,7 @@ for genrecat in genres:
                 break #Kennedy scrapes slowly; events always chronological, so when 2 months passed, can move on to next genre
             time = re.findall("[0-9]{1,2}\:[0-9]{2}\s+[aApP][mM]", datelong) # Extracts the time (should have one or no results)
             if time == []: # if no time results, then must have multiple time and/or date options.  ADD DATE AND TIME MANUALLY AFTER FILE CREATED!!!!
-                starttime = ticketurl  #put link to tickets in file to make dates and times easier to manually extract
+                starttime = eventurl + "#tickets"  #put link to tickets in file to make dates and times easier to manually extract
                 ############## INVESTIGATE SELENIUM TO GET AROUND ISSUE OF DYNAMICALLY-GENERATED DATES & TIMES FOR CONCERT SERIES ###########%%%%%%%%******
                 ## https://coderwall.com/p/vivfza/fetch-dynamic-web-pages-with-selenium ##
             else:
@@ -88,9 +88,14 @@ for genrecat in genres:
             artist = artist.replace("SHIFT ","SHIFT: ")
             artist = artist.replace("National Symphony Orchestra","NSO")
             artist = artist.replace("Washington Performing Arts presents: ", "")
+            artist = artist.replace("Washington Performing Arts presents ", "")
+            artist = artist.replace("Young Concert Artists Presents ", "")
+            artist = artist.replace("KC Jazz Club: ", "")
             artist = artist.replace("The Choral Arts Society of Washington presents:", "Choral Arts Society:")
             artist = artist.replace("Vocal Arts DC presents: ", "")
+            artist = artist.replace("Fortas Chamber Music Concerts: ", "")
             artist = artist.replace("The Washington Chorus presents: ", "Washington Chorus: ")
+            artist = artist.replace("The Washington Chorus presents ", "Washington Chorus: ")
             if "NSO" in artist or "Washington National Opera" in artist or "Washington Chorus" in artist or "Choral Arts Society" in artist:
                 local = "Yes"
             else:

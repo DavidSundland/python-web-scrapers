@@ -99,7 +99,7 @@ for link in bsObj.findAll("a",href=re.compile("^(http\:\/\/www\.rockandrollhotel
             continue
         starttime = bsObj.find("div", {"class":"date_right"}).get_text() # Pulls time, including pm (spreadsheet doesn't care about that)
         artist = bsObj.find("div", {"class":"artist_title_opener_single"}).get_text().strip() # Event name
-        if artist.lower() == "closed" or artist.upper() == "TOASTY BINGO":
+        if artist.lower() == "closed" or "TOASTY BINGO" in artist.upper() or "TRIVIA NIGHT" in artist.upper():
             continue
         artist = artist.replace("SUMMIT","Summit")
         try:

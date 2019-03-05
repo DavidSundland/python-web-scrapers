@@ -82,6 +82,8 @@ for link in bsObj.findAll("a",href=re.compile("^(\/shows\/)")): #The link to eac
         price = price.strip()
         artistlong = eventObj.find("title").get_text().strip()
         artist = re.findall("(.+)\s+\@",artistlong)[0].title()
+        if "listening party" in artist.lower() or "music trivia" in artist.lower() or "watch party" in artist.lower() or "diary of an r&b classic" in artist.lower():
+            continue
         date = eventObj.find("span", {"class":"eventDate"}).attrs["v"]
         ticketweb = eventObj.find("a",{"class":"eventbtn"}).attrs["href"]
         dadate = datetime.datetime.strptime(date, '%d-%b-%Y')  #date is in "01-Jul-2018" format
