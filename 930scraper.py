@@ -9,6 +9,8 @@ import re #real expressions
 import csv #comma-separated values
 import datetime
 
+import scraperLibrary #custom library for venue site scraping
+
 pages = set() #create an empty set of pages
 pageanddate = set() #For list of used links WITH event date and date on which info was added to file
 today = datetime.date.today()
@@ -123,20 +125,8 @@ for link in firstBS.findAll("a",href=re.compile("^(\/event\/)")): #The link to e
 #            description = bsObj.find("div", {"class":"bio"}).get_text() # Get the description, which does include a lot of breaks - will it be a mess?
 #        except:
 #            description = ""
-        description = description.replace("\n"," ") # Eliminates annoying carriage returns 
-        description = description.replace("\r"," ") # Eliminates annoying carriage returns 
-        if (len(description) > 700): # If the description is too long...  
-            descriptionsentences = description.split(". ") #Let's split it into sentences!
-            description = ""
-            for sentence in descriptionsentences:  #Let's rebuild, sentence-by-sentence!
-                description += sentence + ". "
-                if (len(description) > 650):  #Once we exceed 650, dat's da last sentence
-                    break
-            readmore = artistweb #We had to cut it short, so you can read more at the event page UNLESS we found an artist link (in which case, go to their page)
-        elif artistweb != newhtml:  #If description is short and we found an artist link (so artistweb is different than event page)
-            readmore = artistweb #Have the readmore link provide more info about the artist
-        else:
-            readmore = "" #No artist link and short description - no need for readmore
+
+        [description, readmore] = scraperLibrary.descriptionTrim(description, [], 800, artistweb, newhtml)
         try:
             ticketweb = bsObj.find("a", {"class":"tickets"}).attrs["href"] # Get the ticket sales URL; in a try/except in case tickets only at door
         except:

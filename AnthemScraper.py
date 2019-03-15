@@ -9,6 +9,8 @@ import re #real expressions
 import csv #comma-separated values
 import datetime
 
+import scraperLibrary #custom library for venue site scraping
+
 pages = set() #create an empty set of pages
 pageanddate = set() #For list of used links WITH event date and date on which info was added to file
 today = datetime.date.today()
@@ -79,6 +81,7 @@ for link in bsObj.findAll("a",href=re.compile("^(\/event\/)")): #The link to eac
             price = bsObj.find("h3", {"class":"price-range"}).get_text().strip() # Pulls the price, which could be a price range...
         except:
             print("could not find price for", newhtml)
+            continue
         datelongest = bsObj.find("span", {"class":"value-title"}).attrs["title"]
         datelonger = re.findall("20[12][0-9]\-[0-2][0-9]\-[0-3][0-9]T[0-9]{2}\:[0-9]{2}\:[0-9]{2}", datelongest)[0]
         datelong = datetime.datetime.strptime(datelonger, "%Y-%m-%dT%H:%M:%S")
@@ -97,22 +100,27 @@ for link in bsObj.findAll("a",href=re.compile("^(\/event\/)")): #The link to eac
         try:
             description = bsObj.find("div", {"class":"bio"}).get_text().strip()
         except:
-            print("Could not find bio for ", newhtml)
-            description = ""
-        description = description.replace("\n"," ") # Eliminates annoying carriage returns 
-        description = description.replace("\r"," ") # Eliminates annoying carriage returns 
-        if (len(description) > 700): # If the description is too long...  
-            descriptionsentences = description.split(". ") #Let's split it into sentences!
-            description = ""
-            for sentence in descriptionsentences:  #Let's rebuild, sentence-by-sentence!
-                description += sentence + ". "
-                if (len(description) > 650):  #Once we exceed 700, dat's da last sentence
-                    break
-            readmore = artistweb #We had to cut it short, so you can read more at the event page UNLESS we found an artist link (in which case, go to their page)
-        elif artistweb != newhtml:  #If description is short and we found an artist link (so artistweb is different than event page)
-            readmore = artistweb #Have the readmore link provide more info about the artist
-        else:
-            readmore = "" #No artist link and short description - no need for readmore
+            try:
+               description = bsObj.find("div", {"id":"additional-ticket-text"}).get_text().strip()
+            except:
+                print("Could not find bio for ", newhtml)
+                description = ""
+#        description = description.replace("\n"," ") # Eliminates annoying carriage returns 
+#        description = description.replace("\r"," ") # Eliminates annoying carriage returns 
+#        if (len(description) > 700): # If the description is too long...  
+#            descriptionsentences = description.split(". ") #Let's split it into sentences!
+#            description = ""
+#            for sentence in descriptionsentences:  #Let's rebuild, sentence-by-sentence!
+#                description += sentence + ". "
+#                if (len(description) > 650):  #Once we exceed 700, dat's da last sentence
+#                    break
+#            readmore = artistweb #We had to cut it short, so you can read more at the event page UNLESS we found an artist link (in which case, go to their page)
+#        elif artistweb != newhtml:  #If description is short and we found an artist link (so artistweb is different than event page)
+#            readmore = artistweb #Have the readmore link provide more info about the artist
+#        else:
+#            readmore = "" #No artist link and short description - no need for readmore
+        [description, readmore] = scraperLibrary.descriptionTrim(description, [], 800, artistweb, newhtml)
+
         descriptionjammed = description.replace(" ","") # Create a string with no spaces
         try:
             ALLCAPS = re.findall("[A-Z]{15,}", descriptionjammed)[0] # If 15 or more sequential characters in the description are ALL CAPS, let's change the description!
