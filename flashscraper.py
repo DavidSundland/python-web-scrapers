@@ -8,6 +8,8 @@ import csv #comma-separated values
 import datetime
 import requests #for use if urllib doesn't work
 
+import scraperLibrary #custom library for venue site scraping
+
 pages = set() #create an empty set of pages
 pageanddate = set() #For list of used links WITH event date and date on which info was added to file
 today = datetime.date.today()
@@ -70,19 +72,13 @@ for link in bsObj.findAll("a",href=re.compile("^(pages\/details)")): #The link t
         date = re.findall("[A-Z][a-z]+\s+[0-9]{1,2}\,\s+[0-9]{4}", datelong)[0] # This pulls out the date
         dadate = datetime.datetime.strptime((date.strip()), '%B %d, %Y') #Date in table is in day month day, year format.
         if dadate.date() > today+datetime.timedelta(days=61):  #If event is more than 2 months away, skip it for now (a lot can happen in 2 months):
-            print("Skipping: ", newhtml)
             continue
-        else:
-            print("Proceeding with", newhtml)
         artist = re.findall("(.+)\sat\sFlash", datelong)[0].strip()
         if "[OFF]" in artist or "[Off]" in artist or "(Off)" in artist or "(OFF)" in artist:
             continue
-        artist = artist.replace("[open to close]","")
-        artist = artist.replace("(open to close)","")
-        artist = artist.replace("[open-to-close]","")
-        artist = artist.replace(" [in the Green Room]","")
-        artist = artist.replace(" [LiVE]","")
-        artist = artist.replace(" [Open-to-Close]","")
+        artist = artist.replace("[in the Green Room]","")
+        artist = re.sub('[\[\(][oO]pen[\s\-]to[\s\-][cC]lose[\s\-]*[sS]*e*t*\]','',artist)
+        artist = re.sub('\[[lL][iI][vV][eE]\]','',artist)
         artistweb = newhtml  # In case the try/except below fails
         musicurl = ""
         gotartistlink = False
@@ -116,7 +112,6 @@ for link in bsObj.findAll("a",href=re.compile("^(pages\/details)")): #The link t
         except:
             whatnot = "heynow"
         description = ""
-#        print("About to grab description, artist:", artist)
         for onepara in bsObj.findAll("p"):
             try:
                 howaboutthis = onepara.get_text().strip()
@@ -126,39 +121,14 @@ for link in bsObj.findAll("a",href=re.compile("^(pages\/details)")): #The link t
                     description += howaboutthis + " "
             except:
                 continue
-        description = description.replace("\n"," ") # Eliminates annoying carriage returns 
-        description = description.replace("\r"," ") # Eliminates annoying carriage returns 
-        if (len(description) > 500): # If the description is too long...  NOTE - Flash gets shorter descriptions
-            descriptionsentences = description.split(". ") #Let's split it into sentences!
-            description = ""
-            for sentence in descriptionsentences:  #Let's rebuild, sentence-by-sentence!
-                description += sentence + ". "
-                if (len(description) > 450):  #Once we exceed 450, dat's da last sentence
-                    break
-            readmore = artistweb #We had to cut it short, so you can read more at the event page UNLESS we found an artist link (in which case, go to their page)
-        elif artistweb != newhtml:  #If description is short and we found an artist link (so artistweb is different than event page)
-            readmore = artistweb #Have the readmore link provide more info about the artist
-        else:
-            readmore = "" #No artist link and short description - no need for readmore
-        descriptionjammed = description.replace(" ","") # Create a string with no spaces
-        try:
-            ALLCAPS = re.findall("[A-Z]{10,}", descriptionjammed)[0] # If 10 or more sequential characters in the description are ALL CAPS, let's change the description!
-            description = description.rstrip(".") # If there's a period at the end, get rid of it.
-            separatesentences = description.split(".") #Let's split it into sentences!
-            description = ""
-            for onesentence in separatesentences:  #Let's rebuild, sentence-by-sentence!
-                onesentence = onesentence.lstrip()  #Remove leading whitespace so that the capitalization works properly
-                description += onesentence.capitalize() + ". "  #Capitalize ONLY the first letter of each sentence - if proper names aren't capitalized or acronyms become faulty, then that's their fault for abusing ALL CAPS
-        except:
-            aintnobigthang = True # placeholder code (No excessive ALL CAPS abuse found)
-        description = description.replace("facebook","")  # Get rid of annoying extra crap (BUT - watch for unintended consequences)
-        description = description.replace("resident advisor","")
-        description = description.replace("twitter","")
-        description = description.replace("soundcloud","")
-        description = description.replace("music |","")
-        description = description.replace("music  |","")
-        description = description.replace("music   |","")
-        description = description.replace("music    |","")
+
+        [description, readmore] = scraperLibrary.descriptionTrim(description, ["facebook","resident advisor","twitter","soundcloud"], 700, artistweb, newhtml)
+
+        descriptionJammed = description.replace(" ","") # Create a string with no spaces
+        if len(re.findall("[A-Z]{15,}", descriptionJammed)) > 0:
+            description = scraperLibrary.killCapAbuse(description)
+
+        description = re.sub('music\s+\|','',description)
         description = description.replace("|"," ")
         try:
             ticketweb =  bsObj.find("a", {"id":"hypTickets"}).attrs["href"]
