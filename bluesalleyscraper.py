@@ -4,11 +4,10 @@
 from urllib.request import urlopen #for pulling info from websites
 from bs4 import BeautifulSoup #for manipulating info pulled from websites
 import re #real expressions
-import csv #comma-separated values
 import datetime
+import csv #comma-separated values
 
-def compactWord(string):
-    return re.sub('[\s\-\_\/\.]','',string).lower()
+import scraperLibrary #custom library for venue site scraping
 
 pages = set() #create an empty set of pages
 pageanddate = set() #For list of used links WITH event date and date on which info was added to file
@@ -29,17 +28,11 @@ if answer == "y" or answer == "Y":
             pages.add(line[0])
     previousscrape.close()
 
-loopcounter = 0 # A counter to track progress
 # UTFcounter = 0 # Counter for number of encoding problems (thusfar not needed for Blues Alley)
 
-handle = open('local_musicians.txt','r') # opens running list of local musicians (file shared with Twins Jazz)
-text = handle.read()
-# compactText = compactWord(text)
-locallist = compactWord(text).split(',')
-handle.close()
+localList = scraperLibrary.getLocalList()
 
 
-# local = ""
 doors = " "
 genre = "Jazz & Blues"
 venuelink = "http://www.bluesalley.com/"
@@ -61,7 +54,6 @@ bsObj = BeautifulSoup(html)
 for link in bsObj.findAll("a",href=re.compile(".+home\.event.+")): #The link to each unique event page includes "home.event"
     newPage = link.attrs["href"] #extract the links
     if newPage not in pages: #A new link has been found
-#        loopcounter += 1
         print(newPage)
         pages.add(newPage)
         newhtml = newPage # An extra line of code; used 'cuz in some cases a site's base URL needs to be added to the internal link
@@ -70,7 +62,7 @@ for link in bsObj.findAll("a",href=re.compile(".+home\.event.+")): #The link to 
         artistweb = newhtml
         musicurl = ""
         artist = bsObj.find("h1", {"class":"event-title"}).get_text() #This gets the event name (including extra description in some cases)
-        if compactWord(artist) in locallist:
+        if scraperLibrary.compactWord(artist) in localList:
             local = "Yes"
         else:
             local = ""
@@ -103,7 +95,6 @@ for link in bsObj.findAll("a",href=re.compile(".+home\.event.+")): #The link to 
         if len(datelong) == 0:
             datelong = bsObj.find("span", {"id":"event-date"}).get_text()
         year = today.year
-#        print(datelong)
         date = re.findall(",\s([a-zA-Z]+\s[0-9]+)", datelong)[0] #This pulls out the date
         dateonly = datetime.datetime.strptime((date.strip() + ' ' + str(year)), '%B %d %Y').date() #Date is in "March 16" format; year added.
         if dateonly < today - datetime.timedelta(days=30):  #If adding the year results in a date more than a month in the past, then event must be in the next year
@@ -116,7 +107,7 @@ for link in bsObj.findAll("a",href=re.compile(".+home\.event.+")): #The link to 
             price = "Free!"
         else:
             price = re.findall("\$[0-9]+", datelong)[0]  #This extracts the ticket price
-        descriptionparagraphs = list(bsObj.find("p", {"class":"description"}).next_siblings) # Gets the description.  NOTE 1 - be wary of multiple paragraphs with class of "Description"!!!!  NOTE 2 - funky paragraph structure on Twins Jazz site required accessing the siblings rather than getting the description directly.  Possibly necessary here, too.
+        descriptionparagraphs = list(bsObj.find("p", {"class":"description"}).next_siblings) # Gets the description.
         description = "" #Create an empty string
         counter = 0  #Need to create a loop in order to be able to use the .get_text thingie
         while (counter < len(descriptionparagraphs)):
@@ -125,22 +116,11 @@ for link in bsObj.findAll("a",href=re.compile(".+home\.event.+")): #The link to 
                 counter += 1
             except:
                 counter += 1
-        description = description.replace("Watch Video","") # Delete references to link to video
-        description = description.replace("Visit Website","") # Delete references to link to artist site
-        description = description.replace(" \u00A4   \u00A4 "," \u00A4 ") # In case symbol occurs two times in a row, separated by space &nbsp; space
-        description = description.replace(" \u00A4   \u00A4 "," \u00A4 ") # In case symbol occurs two times in a row, separated by space space space
-        if (len(description) > 700): # If the description is too long...
-            descriptionsentences = description.split(". ") #Let's split it into sentences!
-            description = ""
-            for sentence in descriptionsentences:  #Let's rebuild, sentence-by-sentence!
-                description += sentence + ". "
-                if (len(description) > 650):  #Once we exceed 650, dat's da last sentence
-                    break
-            readmore = artistweb #We had to cut it short, so you can read more at the event page UNLESS we found an artist link (in which case, go to their page)
-        elif artistweb != newhtml:  #If description is short and we found an artist link (so artistweb is different than event page)
-            readmore = artistweb #Have the readmore link provide more info about the artist
-        else:
-            readmore = "" #No artist link and short description - no need for readmore
+        description = re.sub('\s+',' ',description)
+        description = description.replace("\u00A4 \u00A4","\u00A4") # In case symbol occurs two times in a row
+        
+        [description, readmore] = scraperLibrary.descriptionTrim(description, ["Watch Video","Visit Website"], 800, artistweb, newhtml)
+
         images = bsObj.findAll("img")
         artistpic = ""
         for oneimage in images: 

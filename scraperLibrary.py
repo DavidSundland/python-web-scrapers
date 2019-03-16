@@ -1,13 +1,8 @@
-# from urllib.request import urlopen #for pulling info from websites
-
-# import requests  # due to changes in site's encoding, needed to add this import
-
-# from bs4 import BeautifulSoup #for manipulating info pulled from websites
-# import re #real expressions
-# import csv #comma-separated values
-# import datetime
+import csv #comma-separated values
+import re
 
 
+### EXPECTED INPUTS:
 # description: string
 # deleteItems: array of items to delete from description (may be unique to each venue)
 # numChars: maximum length of description
@@ -64,3 +59,14 @@ def killCapAbuse(description):
         description = description.strip(end)
     description = description.replace(" dc"," DC").replace("washington","Washington") #OK, we'll at least fix the hometown place name, but nothing else
     return description + lastPunc
+
+# function used by getLocalList AND when checking against results
+def compactWord(string):
+    return re.sub('[\s\-\_\/\.\,]','',string).lower()
+
+def getLocalList():
+    handle = open('local_musicians.txt','r') # opens running list of local musicians
+    text = handle.read()
+    localList = compactWord(text).split(';')
+    handle.close()
+    return localList

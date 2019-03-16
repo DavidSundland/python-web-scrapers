@@ -54,7 +54,7 @@ doors = " "
 handle = open('local_musicians.txt','r') # opens running list of local musicians (file shared with Blues Alley)
 text = handle.read()
 # compactText = compactWord(text)
-locallist = compactWord(text).split(',')
+locallist = compactWord(text).split(';')
 handle.close()
 
 
