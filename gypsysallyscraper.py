@@ -8,6 +8,8 @@ import re #real expressions
 import csv #comma-separated values
 import datetime
 
+import scraperLibrary #custom library for venue site scraping
+
 pages = set() #create an empty set of pages
 pageanddate = set() #For list of used links WITH event date and date on which info was added to file
 today = datetime.date.today()
@@ -26,12 +28,13 @@ if answer == "y" or answer == "Y":
             pageanddate.add((line[0],line[1],line[2]))  #Create list of links that have been checked before
             pages.add(line[0])
             testurl = "https://www.gypsysallys.com" + line[0]
-            try: #test to ensure that previously-scraped events are still valid...
-                diditwork = requests.get(url)
-                if diditwork.status_code > 299:
-                    print(testurl,"caused an error...")
-            except:
-                print(testurl,"caused an error...")
+            if dadate.date() > today-datetime.timedelta():
+                try: #test to ensure that previously-scraped events are still valid...
+                    diditwork = requests.get(url)
+                    if diditwork.status_code > 299:
+                        print("Trying to open", testurl, "event on", line[1], "returned an error code")
+                except:
+                    print("Trying to open", testurl, "event on", line[1], "did not work.")
     previousscrape.close()
 
 counter = 0 # A counter to track progress
@@ -77,7 +80,7 @@ for link in bsObj.findAll("a",href=re.compile("^(\/event\/)")): #The link to eac
             continue
         if dadate.date() > today+datetime.timedelta(days=61):  #If event is more than 2 months away, skip it for now (a lot can happen in 2 months):
             continue
-        time = bsObj.find("span", {"class":"dtstart"}).get_text() # Pulls time, including pm (spreadsheet doesn't care about that) AND "Show:" (NOTE - also has class name of "start")
+        time = bsObj.find("span", {"class":"dtstart"}).get_text() # Pulls time AND "Show:" (NOTE - also has class name of "start")
         starttime = re.findall("[0-9]{1,2}:[0-9]{2}\s*[aApP][mM]", time)[0] #This extracts the time, including am/pm
         try:
             price = bsObj.find("h3", {"class":"price-range"}).get_text().strip() # Pulls the price, which could be a price range
@@ -86,7 +89,8 @@ for link in bsObj.findAll("a",href=re.compile("^(\/event\/)")): #The link to eac
         artist = bsObj.find("h1", {"class":"headliners summary"}).get_text() # Event / top artist name
         artist = artist.replace("VINYL LOUNGE OPEN MIC", "Vinyl Lounge Open Mic") # Eliminate annoying all-caps, if applicable
         artist = artist.replace(", VINYL LOUNGE", "") # Eliminate 'bonus' info about artist being @ Vinyl
-        if "CLOSED" in artist or "Closed" in artist: # Skip closed private events
+        artist = artist.replace("Gordon Sterling Presents:", "")
+        if "closed" in artist.lower() in artist: # Skip closed private events
             continue
         try:
             artistweb = bsObj.find("li", {"class":"web"}).find("a").attrs["href"]  #THIS finds the first instance of a li with a class of "web", then digs deeper, finding the first instance w/in that li of a child a, and pulls the href.  BUT - since some artists may not have link, using try/except
@@ -96,32 +100,13 @@ for link in bsObj.findAll("a",href=re.compile("^(\/event\/)")): #The link to eac
             description = bsObj.find("div", {"class":"bio"}).get_text() # Get the description, which does include a lot of breaks - will it be a mess?
         except:
             description = ""
-        description = description.replace("\n"," ") # Eliminates annoying carriage returns 
-        description = description.replace("\r"," ") # Eliminates annoying carriage returns 
-        if (len(description) > 700): # If the description is too long...  
-            descriptionsentences = description.split(". ") #Let's split it into sentences!
-            description = ""
-            for sentence in descriptionsentences:  #Let's rebuild, sentence-by-sentence!
-                description += sentence + ". "
-                if (len(description) > 650):  #Once we exceed 650, dat's da last sentence
-                    break
-            readmore = artistweb #We had to cut it short, so you can read more at the event page UNLESS we found an artist link (in which case, go to their page)
-        elif artistweb != newhtml:  #If description is short and we found an artist link (so artistweb is different than event page)
-            readmore = artistweb #Have the readmore link provide more info about the artist
-        else:
-            readmore = "" #No artist link and short description - no need for readmore
-        descriptionjammed = description.replace(" ","") # Create a string with no spaces
-        try:
-            ALLCAPS = re.findall("[A-Z]{10,}", descriptionjammed)[0] # If 10 or more sequential characters in the description are ALL CAPS, let's change the description!
-            description = description.rstrip(".") # If there's a period at the end, get rid of it.
-            separatesentences = description.split(".") #Let's split it into sentences!
-            description = ""
-            for onesentence in separatesentences:  #Let's rebuild, sentence-by-sentence!
-                onesentence = onesentence.lstrip()  #Remove leading whitespace so that the capitalization works properly
-                description += onesentence.capitalize() + ". "  #Capitalize ONLY the first letter of each sentence - if proper names aren't capitalized or acronyms become faulty, then that's their fault for abusing ALL CAPS
-        except:
-            aintnobigthang = True # placeholder code (No excessive ALL CAPS abuse found)
-        musicurl = ""
+
+        [description, readmore] = scraperLibrary.descriptionTrim(description, [], 800, artistweb, newhtml)
+
+        descriptionJammed = description.replace(" ","") # Create a string with no spaces
+        if len(re.findall("[A-Z]{15,}", descriptionJammed)) > 0:
+            description = scraperLibrary.killCapAbuse(description)
+        
         try:
             iframes = bsObj.findAll("iframe") # If there's a video, grab it and toss it into the "buy music" column.  BUT - skip iframes that don't contain youtubes
             for onei in iframes:  
@@ -131,7 +116,7 @@ for link in bsObj.findAll("a",href=re.compile("^(\/event\/)")): #The link to eac
                 else:
                     musicurl = ""  # In case there are iframes, but no videos
         except:
-            fakevariable = "kibbles"
+            musicurl = ""
         ticketweb = ""
         try:
             ticketwad = bsObj.find("h3", {"class":"price-range"}).find_next_siblings()  #Ticket link not uniquely labeled - links to tickets to OTHER events have same labels as page's event...
@@ -141,13 +126,10 @@ for link in bsObj.findAll("a",href=re.compile("^(\/event\/)")): #The link to eac
                 except:
                     continue
         except:
-            fakevariable = "nbitsnbitsnbits"
-        if "Open Mic" not in artist:  ########## Find the picture IF not an open mic event (Note: might delete all Vinyl Lounge pics in future, since image tends to suck)
-            try:
-                artistpic = bsObj.find("link", {"rel":"image_src"}).attrs["href"]
-            except:
-                artistpic = ""
-        else:
+            ticketweb = ""
+        try:
+            artistpic = bsObj.find("link", {"rel":"image_src"}).attrs["href"]
+        except:
             artistpic = ""
         try:  # Might crash with weird characters.
             writer.writerow((date, genre, artistpic, local, doors, price, starttime, newhtml, artist, venuelink, venuename, addressurl, venueaddress, description, readmore, musicurl, ticketweb))
