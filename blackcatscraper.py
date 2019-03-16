@@ -6,6 +6,8 @@ import re #real expressions
 import csv #comma-separated values
 import datetime
 
+import scraperLibrary #custom library for venue site scraping
+
 pages = set() #create an empty set of pages
 pageanddate = set() #For list of used links WITH event date and date on which info was added to file
 today = datetime.date.today()
@@ -127,35 +129,15 @@ for link in bsObj.findAll("a",href=re.compile("^(http\:\/\/www\.blackcatdc\.com\
         except:
             artistweb = newhtml
         try: # There isn't always a description...
-            description = bsObj.find("p", {"id":"bio"}).get_text() # Get the description, which does include a lot of breaks - will it be a mess?
+            description = bsObj.find("p", {"id":"bio"}).get_text()
         except:
             description = ""
-        description = description.replace("\n"," ") # Eliminates annoying carriage returns 
-        description = description.replace("\r"," ") # Eliminates annoying carriage returns 
-        if (len(description) > 700): # If the description is too long...  
-            descriptionsentences = description.split(". ") #Let's split it into sentences!
-            description = ""
-            for sentence in descriptionsentences:  #Let's rebuild, sentence-by-sentence!
-                description += sentence + ". "
-                if (len(description) > 650):  #Once we exceed 650, dat's da last sentence
-                    break
-            readmore = artistweb #We had to cut it short, so you can read more at the event page UNLESS we found an artist link (in which case, go to their page)
-        elif artistweb != newhtml:  #If description is short and we found an artist link (so artistweb is different than event page)
-            readmore = artistweb #Have the readmore link provide more info about the artist
-        else:
-            readmore = "" #No artist link and short description - no need for readmore
-        descriptionjammed = description.replace(" ","") # Create a string with no spaces
-        try:
-            ALLCAPS = re.findall("[A-Z]{10,}", descriptionjammed)[0] # If 10 or more sequential characters in the description are ALL CAPS, let's change the description!
-            description = description.rstrip(".") # If there's a period at the end, get rid of it.
-            separatesentences = description.split(".") #Let's split it into sentences!
-            description = ""
-            for onesentence in separatesentences:  #Let's rebuild, sentence-by-sentence!
-                onesentence = onesentence.lstrip()  #Remove leading whitespace so that the capitalization works properly
-                description += onesentence.capitalize() + ". "  #Capitalize ONLY the first letter of each sentence - if proper names aren't capitalized or acronyms become faulty, then that's their fault for abusing ALL CAPS
-        except:
-            aintnobigthang = True # placeholder code (No excessive ALL CAPS abuse found)
-        description = description.strip()
+            
+        [description, readmore] = scraperLibrary.descriptionTrim(description, [], 800, artistweb, newhtml)
+
+        descriptionJammed = description.replace(" ","") # Create a string with no spaces
+        if len(re.findall("[A-Z]{15,}", descriptionJammed)) > 0:
+            description = scraperLibrary.killCapAbuse(description)
         try:
             iframes = bsObj.findAll("iframe").attrs["src"] # If there's a video, grab it and toss it into the "buy music" column.  BUT - skip iframes that don't contain youtubes
             for onei in iframes:
