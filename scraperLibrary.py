@@ -9,6 +9,7 @@ import re
 
 def descriptionTrim(description, deleteItems, numChars, artistWeb, newHtml):
     description = description.replace("\n"," ").replace("\r"," ").strip() # Eliminates annoying carriage returns & trailing spaces
+    description = re.sub('\s{2,}',' ',description)
     for item in deleteItems:
         description = description.replace(item,"")
     splitChars = ["#$",". ","! ","? ",".' ",'." '] # sentence ends not always defined by a period; use of a lot of exclamation points or quotations can cause extra-long description...
@@ -64,6 +65,7 @@ def killCapAbuse(description):
 def compactWord(string):
     return re.sub('[\s\-\_\/\.\,]','',string).lower()
 
+# NOTE - as list of local artists gets longer, will want to alphabetize list to allow for more efficient searches
 def getLocalList():
     handle = open('local_musicians.txt','r') # opens running list of local musicians
     text = handle.read()

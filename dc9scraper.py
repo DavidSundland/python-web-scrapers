@@ -1,11 +1,12 @@
 #Scrapes DC9's events, using - http://dcnine.com/calendar/  
-#DON'T FORGET TO WEED OUT THE 'SOLD OUT' EVENTS
 
 from urllib.request import urlopen #for pulling info from websites
 from bs4 import BeautifulSoup #for manipulating info pulled from websites
 import re #real expressions
 import csv #comma-separated values
 import datetime
+
+import scraperLibrary #custom library for venue site scraping
 
 pages = set() #create an empty set of pages
 pageanddate = set() #For list of used links WITH event date and date on which info was added to file
@@ -19,15 +20,10 @@ if answer == "y" or answer == "Y":
         reader = csv.reader(previousscrape)
         previousinfo = list(reader)
     for line in previousinfo:
-        try:
-            dadate = datetime.datetime.strptime(line[1].strip(), '%Y-%m-%d') #Date in table was in 2017-06-27 format
-        except:
-            dadate = datetime.datetime.strptime(line[1].strip(), '%m/%d/%Y') #Date in table is now in 4/28/2018 format
+        dadate = datetime.datetime.strptime(line[1].strip(), '%m/%d/%Y') #Date in table is now in 4/28/2018 format
         if dadate.date() > today-datetime.timedelta(days=30):  #If used link is NOT for an event that is more than a month old, add it to list
             pageanddate.add((line[0],line[1],line[2]))  #Create list of links that have been checked before
             pages.add(line[0])
-#        else:
-#            print(dadate.date(),"skipped")
     previousscrape.close()
 
 counter = 0  #to keep track of progress while program running
@@ -75,52 +71,37 @@ for link in bsObj.findAll("a",href=re.compile("^(\/event\/)")): #The link to eac
             price = "Free!"  # In the first instance in which price-range failed, event was free...
             print("Verify that ", newhtml, " is indeed free!!!!!!!")
         artist = bsObj.find("h1", {"class":"headliners"}).get_text().strip() # Event name
-        if "sold out" in artist.lower() or "MIXTAPE" in artist.upper() or "Peach Pit" in artist or "KARAOKE" in artist.upper() or "Liberation Dance Party" in artist or "Astronomy on Tap" in artist or "NERD NITE" in artist.upper() or "90S TRACKS" in artist.upper() or "WIG & DISCO" in artist or "daft lunch" in artist or "DARK & STORMY" in artist.upper():
+
+        skippers = ["sold out","mixtape","peach pit","karaoke","liberation dance party","astronomy on tap","nerd nite","90s tracks","wig & disco","daft lunch","dark & stormy"]
+        skip = False
+        for skipper in skippers:
+            if skipper in artist.lower():
+                skip = True
+        if skip:
             continue
-        artist = artist.replace(" [EARLY SHOW]","")
-        artist = artist.replace(" [late event]","")
-        artist = artist.replace(" [early show]","")
-        artist = artist.replace(" [LATE EVENT]","")
-        artist = artist.replace(" [ EARLY SHOW]","")
-        artist = artist.replace(" [ late event]","")
-        artist = artist.replace(" [ early show]","")
-        artist = artist.replace(" [ LATE EVENT]","")
-        artist = artist.replace(" (LATE SHOW)","")
-        artist = artist.replace(" [EARLY EVENT]","")
-        artist = artist.replace(" [early event]","")
-        artist = artist.replace(" [late show]","")
-        artist = artist.replace(" [ EARLY SHOW ]","")
+        artist = re.sub('\s\[\s*[eE][aA][rR][lL][yY]\s+[sS][hH][oO][wW]\s*\]','',artist)
+        artist = re.sub('\s\[\s*[lL][aA][tT][eE]\s+[sS][hH][oO][wW]\s*\]','',artist)
+        artist = re.sub('\s\[\s*[eE][aA][rR][lL][yY]\s+[eE][vV][eE][nN][tT]\s*\]','',artist)
+        artist = re.sub('\s\[\s*[lL][aA][tT][eE]\s+[eE][vV][eE][nN][tT]\s*\]','',artist)
+        if len(re.findall("[A-Z]", artist)) > 8 and len(re.findall("[a-z]", artist)) < 4: # if caps are abused...
+            words = artist.split(' ')
+            artist = ""
+            for word in words:
+                artist += word.capitalize() + ' '
+            artist = artist.strip()
         try:
-            readmore = bsObj.find("li", {"class":"web"}).find("a").attrs["href"]  #THIS finds the first instance of a li with a class of "web", then digs deeper, finding the first instance w/in that li of a child a, and pulls the href.  BUT - since some artists may not have link, using try/except
+            artistweb = bsObj.find("li", {"class":"web"}).find("a").attrs["href"]  #THIS finds the first instance of a li with a class of "web", then digs deeper, finding the first instance w/in that li of a child a, and pulls the href.  BUT - since some artists may not have link, using try/except
         except:
             try:
-                readmore = bsObj.find("li", {"class":"facebook"}).find("a").attrs["href"]
+                artistweb = bsObj.find("li", {"class":"facebook"}).find("a").attrs["href"]
             except:
-                readmore = ""
+                artistweb = newhtml
         try:
             description = bsObj.find("div", {"class":"bio"}).get_text().strip()
         except:
             print("Found no description")
-        description = description.replace("OFFICIAL WEBSITE","")
-        description = description.replace("TWITTER","")
-        description = description.replace("FACEBOOK","")
-        description = description.replace("  / ","")  
-        description = description.strip("/")
-        description = description.strip()
-        description = description.strip("/")
-        description = description.strip()
-        description = description.replace("  "," ")
-        description = description.replace("\n"," ") # Eliminates annoying carriage returns 
-        description = description.replace("\r"," ") # Eliminates annoying carriage returns 
-        if (len(description) > 700): # If the description is too long...  
-            descriptionsentences = description.split(". ") #Let's split it into sentences!
-            description = ""
-            for sentence in descriptionsentences:  #Let's rebuild, sentence-by-sentence!
-                description += sentence + ". "
-                if (len(description) > 650):  #Once we exceed 650, dat's da last sentence
-                    break
-            if readmore == "":
-                readmore = newhtml #We had to cut description short & found no artist link, so you can read more at the event page
+        description = description.replace("  / ","").strip("/").strip().strip("/").strip()
+        [description, readmore] = scraperLibrary.descriptionTrim(description, ["OFFICIAL WEBSITE","TWITTER","FACEBOOK"], 800, artistweb, newhtml)
         try:
             musicurl = bsObj.find("li", {"class":"soundcloud"}).find("a").attrs["href"]
         except:
