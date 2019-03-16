@@ -80,7 +80,7 @@ for link in bsObj.findAll("a",href=re.compile("^(\/event\/)")): #The link to eac
         try:
             price = bsObj.find("h3", {"class":"price-range"}).get_text().strip() # Pulls the price, which could be a price range...
         except:
-            print("could not find price for", newhtml)
+            print("COULD NOT FIND PRICE for", newhtml)
             continue
         datelongest = bsObj.find("span", {"class":"value-title"}).attrs["title"]
         datelonger = re.findall("20[12][0-9]\-[0-2][0-9]\-[0-3][0-9]T[0-9]{2}\:[0-9]{2}\:[0-9]{2}", datelongest)[0]
@@ -103,39 +103,18 @@ for link in bsObj.findAll("a",href=re.compile("^(\/event\/)")): #The link to eac
             try:
                description = bsObj.find("div", {"id":"additional-ticket-text"}).get_text().strip()
             except:
-                print("Could not find bio for ", newhtml)
+                print("COULD NOT FIND BIO for ", newhtml)
                 description = ""
-#        description = description.replace("\n"," ") # Eliminates annoying carriage returns 
-#        description = description.replace("\r"," ") # Eliminates annoying carriage returns 
-#        if (len(description) > 700): # If the description is too long...  
-#            descriptionsentences = description.split(". ") #Let's split it into sentences!
-#            description = ""
-#            for sentence in descriptionsentences:  #Let's rebuild, sentence-by-sentence!
-#                description += sentence + ". "
-#                if (len(description) > 650):  #Once we exceed 700, dat's da last sentence
-#                    break
-#            readmore = artistweb #We had to cut it short, so you can read more at the event page UNLESS we found an artist link (in which case, go to their page)
-#        elif artistweb != newhtml:  #If description is short and we found an artist link (so artistweb is different than event page)
-#            readmore = artistweb #Have the readmore link provide more info about the artist
-#        else:
-#            readmore = "" #No artist link and short description - no need for readmore
         [description, readmore] = scraperLibrary.descriptionTrim(description, [], 800, artistweb, newhtml)
 
-        descriptionjammed = description.replace(" ","") # Create a string with no spaces
-        try:
-            ALLCAPS = re.findall("[A-Z]{15,}", descriptionjammed)[0] # If 15 or more sequential characters in the description are ALL CAPS, let's change the description!
-            description = description.rstrip(".") # If there's a period at the end, get rid of it.
-            separatesentences = description.split(".") #Let's split it into sentences!
-            description = ""
-            for onesentence in separatesentences:  #Let's rebuild, sentence-by-sentence!
-                onesentence = onesentence.lstrip()  #Remove leading whitespace so that the capitalization works properly
-                description += onesentence.capitalize() + ". "  #Capitalize ONLY the first letter of each sentence - if proper names aren't capitalized or acronyms become faulty, then that's their fault for abusing ALL CAPS
-        except:
-            aintnobigthang = True # placeholder code (No excessive ALL CAPS abuse found)
+        descriptionJammed = description.replace(" ","") # Create a string with no spaces
+        if len(re.findall("[A-Z]{15,}", descriptionJammed)) > 0:
+            scraperLibrary.killCapAbuse(description)
+        
         try:
             ticketweb = bsObj.find("a", {"class":"tickets"}).attrs["href"]
         except:
-            print("Could not find ticket link for", newhtml)
+            print("COULD NOT FIND TICKET LINK for", newhtml)
             pages.add(newPage)
             pageanddate.add((newPage,date,datetoday))  # Add link to list, paired with event date and today's date
             continue

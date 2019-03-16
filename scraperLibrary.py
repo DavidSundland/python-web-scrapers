@@ -41,4 +41,20 @@ def descriptionSplit(description, stripChar, splitChar, numChars, artistWeb):
     if description.strip().endswith(checkChars):
         description = description.strip().strip(checkChars) + splitChar
     return [description.strip(), readmore]
-    
+
+def killCapAbuse(description):
+    sentenceEnds = [". ",".' ","! ","? ",'." ']
+    for end in sentenceEnds:
+        separateSentences = description.split(end)
+        description = ""
+        for oneSentence in separateSentences:  #Let's rebuild, sentence-by-sentence!
+            #Capitalize ONLY the first letter of each sentence - if proper names aren't capitalized or acronyms become faulty, then that's their fault for screaming with ALL CAPS
+            oneSentence = oneSentence.lstrip()
+            oneSentence = oneSentence.capitalize()
+            if oneSentence.startswith('"'):
+                oneSentence = '"' + oneSentence.lstrip('"').capitalize()
+            if oneSentence.startswith("'"):
+                oneSentence = "'" + oneSentence.lstrip("'").capitalize()
+            description += oneSentence + end   
+    description = description.replace(" dc"," DC").replace("washington","Washington") #OK, we'll at least fix the hometown place name, but nothing else
+    return description
