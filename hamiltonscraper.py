@@ -9,6 +9,8 @@ import re #real expressions
 import csv #comma-separated values
 import datetime
 
+import scraperLibrary #custom library for venue site scraping
+
 pages = set() #create an empty set of pages
 pageanddate = set() #For list of used links WITH event date and date on which info was added to file
 today = datetime.date.today()
@@ -35,7 +37,8 @@ if answer == "y" or answer == "Y":
 UTFcounter = 0
 screwydate = set()  #create empty set to keep track of date oddities
 
-local = ""  # Add test for local in future
+localList = scraperLibrary.getLocalList()
+
 doors = " "
 genre = "Rock & Pop"  # Add test for genre in future
 venuelink = "http://live.thehamiltondc.com"
@@ -102,34 +105,26 @@ for link in bsObj.findAll("a",href=re.compile("^(\/event\/)")): #The link to eac
             price = eventObj.find("h3", {"class":"price-range"}).get_text().strip() # Pulls the price, which could be a price range
         except: # No price range means that it's free (I hope)
             price = "Free!"
-        artist = eventObj.find("h1", {"class":"headliners summary"}).get_text() # Event / top artist name
-        artist = artist.replace("Free Late Night Music in The Loft with ","") #Get rid of unnecessary text
-        artist = artist.replace("Free Late Night in The Loft with ","")
-        artist = artist.replace("Late Night in The Loft with ","")
-        artist = artist.replace(" (Early Show)","")
-        artist = artist.replace(" (Late Show)","")
+        artist = eventObj.find("h1", {"class":"headliners summary"}).get_text()
+        if artist=="TBA":
+            continue
+        artist = re.sub('(Free\s)*(Late\sNight\s)(Music\s)*in\s[tT]he\sLoft\s[wW]ith\s','',artist)
+        artist = artist.replace(" (Night One)","").replace(" (Night Two)","")
+        if scraperLibrary.compactWord(artist) in localList:
+            local = "Yes"
+        else:
+            local = ""
         try:
             artistweb = eventObj.find("li", {"class":"web"}).find("a").attrs["href"]  #THIS finds the first instance of a li with a class of "web", then digs deeper, finding the first instance w/in that li of a child a, and pulls the href.  BUT - since some artists may not have link, using try/except
         except:
             artistweb = newhtml
         try: # There isn't always a description...
-            description = eventObj.find("div", {"class":"bio"}).get_text() # Get the description, which does include a lot of breaks - will it be a mess?
+            description = eventObj.find("div", {"class":"bio"}).get_text()
         except:
             description = ""
-        description = description.replace("\n"," ") # Eliminates annoying carriage returns 
-        description = description.replace("\r"," ") # Eliminates annoying carriage returns 
-        if (len(description) > 700): # If the description is too long...  
-            descriptionsentences = description.split(". ") #Let's split it into sentences!
-            description = ""
-            for sentence in descriptionsentences:  #Let's rebuild, sentence-by-sentence!
-                description += sentence + ". "
-                if (len(description) > 650):  #Once we exceed 650, dat's da last sentence
-                    break
-            readmore = artistweb #We had to cut it short, so you can read more at the event page UNLESS we found an artist link (in which case, go to their page)
-        elif artistweb != newhtml:  #If description is short and we found an artist link (so artistweb is different than event page)
-            readmore = artistweb #Have the readmore link provide more info about the artist
-        else:
-            readmore = "" #No artist link and short description - no need for readmore
+
+        [description, readmore] = scraperLibrary.descriptionTrim(description, [], 800, artistweb, newhtml)
+
         try:
             additionalinfo = eventObj.find("h2", {"class":"additional-event-info"}).get_text()
             if "THIS SHOW IS IN OUR LOFT BAR" in additionalinfo:
@@ -139,20 +134,20 @@ for link in bsObj.findAll("a",href=re.compile("^(\/event\/)")): #The link to eac
         if "Fast Eddie" in artist and len(description) < 100: #Fast Eddie plays Hamilton a lot but never has a description
             description = "Serving up a menu of award-winning blues, soul, and rock’n’roll, Fast Eddie & The Slowpokes are fresh off their semi-final finish at the 2017 International Blues Challenge. Their mix of originals and covers stretches from West Coast swing to classic Chicago blues and Memphis soul. The band’s music will get you out of your seat and on your feet."
             genre = "Jazz & Blues"
-            local = "Yes"
         elif "Michael Scoglio" in artist and len(description) < 100: #Michael Scoglio plays Hamilton a lot but never has a description
             description = "As the son of a Southern Baptist televangelist, I didn't hear my first rock album until the age of 16. I grew up listening to gospel artists and singing in the church. My first rock album forever changed the way I heard and played music. Since then I have worked to become a top notch player, songwriter, and singer.  I spend my time writing new songs and jamming with other musicians, including Dog City Hoedown, Mike's Swing Thing, and The Electric Peacock Dance Band."
             genre = "Rock & Pop"
-            local = "Yes"
             readmore = "https://www.mikescoglio.com/home"
         elif "Mercy Creek" in artist and len(description) < 100: 
             description = "Based in Virginia, Mercy Creek performs original music they call aggressive folk rock. Singer/guitarist Cheryl Nystrom and song writing partner/drummer Jim Ball combine elements of modern folk, world beat, rock, and hints of blues and bluegrass to create music that is fresh and unique. From world beat to folk, the musical styles used in Mercy Creek's songs are anchored by Nystrom's beautiful voice and intelligent lyrics.  Mercy Creek has released 7 independent albums and have been a full time performing act since 1998, playing across the country at clubs, festivals, and concerts."
             genre = "Rock & Pop"
-            local = "Yes"
             readmore = "http://www.mercycreek.com/"
+        elif ("alex and the red parez" in artist.lower() or "alex & the red parez" in artist.lower() or "alex the red parez" in artist.lower()) and len(description) <100:
+            description = "Alex The Red Parez aka El Rojo has been bringing acoustic rock and old-time country to the Washington DC Metro Area since 2006. Whether performing original music or classic material, Alex’s voice is “reminiscent of Johnny Cash, though often sung with Jello Biafra’s inflection” (Matthew Stabley, NBCWashington.com) and “sounds like Nick Cave reinterpreting the early songbook of Bill Callahan” (The Big Easy - MetroMusicScence.com). “El Rojo” to his friends, Parez takes inspiration from epic troubadours Johnny Cash, Bruce Springsteen, Tom Petty and local balladeer John Bustine amongst various other artists. In trio mode, Alex is flanked by accomplished harmonica sideman Terry Boes and prolific bassist Derek Evry who is also a fantastic songwriter, singer, guitarist and band leader. Alex has also performed with several other local musicians for various tribute shows."
+            genre = "Americana"
+            readmore = "https://www.alexparez.com/"
         else:
             genre = "Rock & Pop"
-            local = ""
         try:
             ticketweb = eventObj.find("a", {"class":"tickets"}).attrs["href"] # Get the ticket sales URL; in a try/except in case tickets only at door
         except:
