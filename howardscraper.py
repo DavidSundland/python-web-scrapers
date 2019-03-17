@@ -7,6 +7,8 @@ import re #real expressions
 import csv #comma-separated values
 import datetime
 
+import scraperLibrary #custom library for venue site scraping
+
 pages = set() #For list of used links 
 pageanddate = set() #For list of used links WITH event date and date on which info was added to file
 today = datetime.date.today()
@@ -26,7 +28,6 @@ if answer == "y" or answer == "Y":
             pages.add(line[0])
     previousscrape.close()
 
-counter = 0 # A counter to track progress
 UTFcounter = 0 # Counter for number of encoding problems
 genre = "Rock & Pop"  #Add test for this in future
 local = ""  #Add test for this in future
@@ -39,7 +40,7 @@ musicurl = ""   #Add test for this in future
 
 datetoday = str(today)
 backupfile = "../scraped/BackupFiles/HowardScraped" + datetoday + ".csv"
-csvFile = open('../scraped/scraped-howard.csv', 'w', newline='') #The CSV file to which the scraped info will be copied.  NOTE - need to define the 'newline' as empty to avoid empty rows in spreadsheet
+csvFile = open('../scraped/scraped-howard.csv', 'w', newline='') #The CSV file to which the scraped info will be copied.
 backupCVS = open(backupfile, 'w', newline = '') # A back-up file, just in case
 writer = csv.writer(csvFile)
 backupwriter = csv.writer(backupCVS)
@@ -55,12 +56,14 @@ for javascript in bsObj.findAll("script", {"type":"text/javascript"}):
             onepage = onefound.replace("\\", "") # Get rid of the backslashes
             if onepage not in pages: #A new link has been found
                 try:
-                    eventhtml = urlopen(onepage)
-                    eventObj = BeautifulSoup(eventhtml)
+                    newhtml = urlopen(onepage)
+                    eventObj = BeautifulSoup(newhtml)
                 except:
                     print("Skipped:",onepage)
                     continue
-#                counter += 1
+                artist = eventObj.find("p", {"class":"show-primary-info-title"}).get_text() # Event / top artist name
+                if artist == "Henny & Waffles":
+                    continue
                 eventdate = eventObj.find("p", {"class":"show-primary-info-showdate"}).get_text()
                 dadate = datetime.datetime.strptime((eventdate.strip()), '%A, %B %d, %Y') #Date in table is in day month day, year format.
                 if dadate.date() > today+datetime.timedelta(days=61):  #If event is more than 2 months away, skip it for now (a lot can happen in 2 months):
@@ -70,10 +73,9 @@ for javascript in bsObj.findAll("script", {"type":"text/javascript"}):
                 time = eventObj.find("p", {"class":"show-primary-info-showtime"}).get_text() # Pulls time, including "Showtime @ "
                 starttime = re.findall("([0-9]+:[0-9]{2}\s*[apAP][mM])", time)[0] #This extracts the time, including am/pm
                 price = eventObj.find("p", {"class":"show-primary-info-tickets"}).get_text() # Pulls the price, which could be a price range, AND DOES INCLUDE "Tickets"
-                if "$" not in price and "free" not in price and "Free" not in price and "FREE" not in price: # No price indicated - skip it
+                if "$" not in price and "free" not in price.lower(): # No price indicated - skip it
                     continue
                 price = price.replace("Tickets ","") #Get rid of leading text
-                artist = eventObj.find("p", {"class":"show-primary-info-title"}).get_text() # Event / top artist name
                 try:
                     artistweb = eventObj.find("p", {"class":"show-artist-website"}).find("a").attrs["href"]  #THIS finds the first instance of a li with a class of "web", then digs deeper, finding the first instance w/in that li of a child a, and pulls the href.  BUT - since some artists may not have link, using try/except
                     try: #test the link to see if it works
@@ -90,31 +92,12 @@ for javascript in bsObj.findAll("script", {"type":"text/javascript"}):
                         description += brosis.get_text() + " "
                 except:
                     print("Description find failed")
-                description = description.replace("\n"," ") # Eliminates annoying carriage returns 
-                description = description.replace("\r"," ") # Eliminates annoying carriage returns 
-                if (len(description) > 600): # If the description is too long...  
-                    descriptionsentences = description.split(". ") #Let's split it into sentences!
-                    description = ""
-                    for sentence in descriptionsentences:  #Let's rebuild, sentence-by-sentence!
-                        description += sentence + ". "
-                        if (len(description) > 550):  #Once we exceed 550, dat's da last sentence
-                            break
-                    readmore = artistweb #We had to cut it short, so you can read more at the event page UNLESS we found an artist link (in which case, go to their page)
-                elif artistweb != onepage:  #If description is short and we found an artist link (so artistweb is different than event page)
-                    readmore = artistweb #Have the readmore link provide more info about the artist
-                else:
-                    readmore = "" #No artist link and short description - no need for readmore
-                descriptionjammed = description.replace(" ","") # Create a string with no spaces
-                try:
-                    ALLCAPS = re.findall("[A-Z]{10,}", descriptionjammed)[0] # If 10 characters in a row are ALL CAPS...
-                    description = description.rstrip(".") # If there's a period at the end, get rid of it.
-                    separatesentences = description.split(".") #Let's split it into sentences!
-                    description = ""
-                    for onesentence in separatesentences:  #Let's rebuild, sentence-by-sentence!
-                        onesentence = onesentence.lstrip()  #Remove leading whitespace so that the capitalization works properly
-                        description += onesentence.capitalize() + ". "  #Capitalize ONLY the first letter of each sentence - if proper names aren't capitalized or acronyms become faulty, then that's their fault for abusing ALL CAPS
-                except:
-                    aintnobigthang = True # placeholder code (No excessive ALL CAPS abuse found)
+                
+                [description, readmore] = scraperLibrary.descriptionTrim(description, [], 800, artistweb, newhtml)
+                
+                descriptionJammed = description.replace(" ","") # Create a string with no spaces
+                if len(re.findall("[A-Z]{15,}", descriptionJammed)) > 0:
+                    description = scraperLibrary.killCapAbuse(description)
                 try:
                     ticketweb = eventObj.findAll("p", {"class":"show-primary-info-tickets"})[1].find("a").attrs["href"] # Get the ticket sales URL; in a try/except in case tickets only at door and because ticket sales don't have unique identifier
                 except:
