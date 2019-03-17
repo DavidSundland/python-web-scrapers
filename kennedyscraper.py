@@ -2,16 +2,22 @@
 # Future - add "Local" variable, adding in NSO, etc., automatically
 
 from urllib.request import urlopen #for pulling info from websites
+import requests #a substitute for urllib, which was not working on 3/19
+
 from bs4 import BeautifulSoup #for manipulating info pulled from websites
 import re #real expressions
 import csv #comma-separated values
 import datetime
+
+import scraperLibrary #custom library for venue site scraping
+
 
 pages = set() #For list of used links
 pageanddate = set() #For list of used links WITH event date and date on which info was added to file
 today = datetime.date.today()
 yesno = ("y","Y","n","N")
 answer = ""
+
 
 while answer not in yesno:
     answer = input("Do you want to open used links file? (Skip previously-used links?) ")
@@ -49,16 +55,23 @@ backupwriter.writerow(("DATE", "GENRE", "FEATURE?", "LOCAL?", "DOORS?", "PRICE",
 
 for genrecat in genres:
     url = "http://www.kennedy-center.org/calendar/genre/" + genrecat
-    html = urlopen(url)
-    bsObj = BeautifulSoup(html)
+    try: #did not work on 3/19
+        html = urlopen(url)
+        bsObj = BeautifulSoup(html)
+    except:
+        bsObj = BeautifulSoup(requests.get(url).text)
     for link in bsObj.findAll("a", href = re.compile("^(\/calendar\/event\/)")):
         newPage = link.attrs["href"] #extract the link
         newPage = newPage.strip("#tickets")  # Some links jump to ticket portion of page - delete this to avoid redundancies
         if newPage not in pages:
-            eventurl = "http://www.kennedy-center.org" + newPage
-            print(eventurl)
-            eventhtml = urlopen(eventurl)
-            eventObj = BeautifulSoup(eventhtml)
+            newhtml = "http://www.kennedy-center.org" + newPage
+            print(newhtml)
+            try:
+                eventhtml = urlopen(newhtml)
+                eventObj = BeautifulSoup(eventhtml)
+            except:
+                eventObj = BeautifulSoup(requests.get(newhtml).text)
+            artistweb = newhtml
             year = today.year
             datelong = eventObj.find("h2", {"class":"event-date"}).get_text().strip()
             date = re.findall("[JFMASOND][a-z]+\s+[0-9]{1,2}\,\s+20[12][0-9]", datelong)[0]
@@ -67,7 +80,7 @@ for genrecat in genres:
                 break #Kennedy scrapes slowly; events always chronological, so when 2 months passed, can move on to next genre
             time = re.findall("[0-9]{1,2}\:[0-9]{2}\s+[aApP][mM]", datelong) # Extracts the time (should have one or no results)
             if time == []: # if no time results, then must have multiple time and/or date options.  ADD DATE AND TIME MANUALLY AFTER FILE CREATED!!!!
-                starttime = eventurl + "#tickets"  #put link to tickets in file to make dates and times easier to manually extract
+                starttime = newhtml + "#tickets"  #put link to tickets in file to make dates and times easier to manually extract
                 ############## INVESTIGATE SELENIUM TO GET AROUND ISSUE OF DYNAMICALLY-GENERATED DATES & TIMES FOR CONCERT SERIES ###########%%%%%%%%******
                 ## https://coderwall.com/p/vivfza/fetch-dynamic-web-pages-with-selenium ##
             else:
@@ -87,15 +100,13 @@ for genrecat in genres:
                 continue
             artist = artist.replace("SHIFT ","SHIFT: ")
             artist = artist.replace("National Symphony Orchestra","NSO")
-            artist = artist.replace("Washington Performing Arts presents: ", "")
-            artist = artist.replace("Washington Performing Arts presents ", "")
+            artist = re.sub("(Washington\sPerforming\sArts\s)[pP](resents)\:*\s+","",artist)
             artist = artist.replace("Young Concert Artists Presents ", "")
             artist = artist.replace("KC Jazz Club: ", "")
             artist = artist.replace("The Choral Arts Society of Washington presents:", "Choral Arts Society:")
-            artist = artist.replace("Vocal Arts DC presents: ", "")
+            artist = re.sub("Vocal\sArts\sDC\s[pP]resents\:*\s+","",artist)
             artist = artist.replace("Fortas Chamber Music Concerts: ", "")
-            artist = artist.replace("The Washington Chorus presents: ", "Washington Chorus: ")
-            artist = artist.replace("The Washington Chorus presents ", "Washington Chorus: ")
+            artist = re.sub("(The\s)*(Washington\sChorus\s)[pP](resents)\:*\s+","Washington Chorus:",artist)
             if "NSO" in artist or "Washington National Opera" in artist or "Washington Chorus" in artist or "Choral Arts Society" in artist:
                 local = "Yes"
             else:
@@ -103,7 +114,7 @@ for genrecat in genres:
             try:
                 pricelong = eventObj.find("div", {"class":"price"}).get_text() #Price range IF not free ("price" class may not exist for free events)
             except:
-#                print("Is",eventurl,"free?")  #Perhaps add this back in future - was creating false positives with events that were so far out they were skipped anyway
+#                print("Is",newhtml,"free?")  #Perhaps add this back in future - was creating false positives with events that were so far out they were skipped anyway
                 pricelong = "See event link for pricing"
             if "free" in pricelong or "Free" in pricelong or "FREE" in pricelong:
                 price = "Free!"
@@ -114,26 +125,13 @@ for genrecat in genres:
             else:
                 price = pricelong.replace("Price","")
                 price = price.strip()
-                ticketurl = eventurl + "#tickets"
-#                try:
-#                    price = re.findall("\$[0-9]{1,4}", datelong)[0]  # If one price
-#                except:
-#                    price = re.findall("\$[0-9]{1,4}\s+\-\s+\$[0-9]{1,4}", datelong)[0]  # If price range
+                ticketurl = newhtml + "#tickets"
             description = eventObj.find("div", {"class":"blurbpadding"}).get_text(' ').strip()
             description = description.strip()
             description = re.sub(r'\~+', '~~~', description) # Trim line break when included 
-            description = description.replace("\n"," ") # Eliminates annoying carriage returns 
-            description = description.replace("\r"," ") # Eliminates annoying carriage returns 
-            if (len(description) > 700): # If the description is too long...
-                descriptionsentences = description.split(". ") #Let's split it into sentences!
-                description = ""
-                for sentence in descriptionsentences:  #Let's rebuild, sentence-by-sentence!
-                    description += sentence + ". "
-                    if (len(description) > 650):  #Once we exceed 650, dat's da last sentence
-                        break
-                readmore = eventurl #We had to cut it short, so you can read more at the event page
-            else:
-                readmore = "" #We included the full description, so no need to have a readmore link
+
+            [description, readmore] = scraperLibrary.descriptionTrim(description, [], 800, artistweb, newhtml)
+
             artistpic = ""
             try:
                 alldapics = eventObj.findAll("img")
@@ -145,33 +143,25 @@ for genrecat in genres:
                 artistpic = ""
             if "default-480" in artistpic: #Get rid of default image of Kennedy Center
                 artistpic = ""
-            # started attempt to pull dynamically generated info, but it didn't work...
-#            tablecells = eventObj.find("td")
-#            for onecell in tablecells:
-#                try:  # if full-date provided in cell, must be concert date
-#                    dateonly = onecell.find("span", {"class":"full-date"}).get_text().strip()
-#                    print("found a cell with a date")
-#                    date = datetime.datetime.strptime((dateonly.strip() + ', ' + str(year)), '%A, %B %d, %Y').date()
-#                    if date < today - datetime.timedelta(days=30):  #If date more than a month in past, event must be in next year
-#                        date = datetime.datetime.strptime((dateonly.strip() + ', ' + str(year + 1)), '%A, %B %d, %Y').date()
-#                    if date > today+datetime.timedelta(days=61):  #If event is more than 2 months away, skip it for now (a lot can happen in 2 months):
-#                        continue
-#                except:
-#                    print("found a cell but no date")
             pages.add(newPage)
             pageanddate.add((newPage,datetoday))  # Add link to list, paired with today's date
+            
+            write1 = (date, genre, artistpic, local, doors, price, starttime, artistweb, artist, venuelink, venuename, addressurl, venueaddress, description, readmore, musicurl, ticketurl)
+            write2 = (date, genre, artistpic, local, doors, price, starttime, artistweb, artist, venuelink, venuename, addressurl, venueaddress, description.encode('UTF-8'), readmore, musicurl, ticketurl)
+            write3 = (date, genre, artistpic, local, doors, price, starttime, newhtml, artist.encode('UTF-8'), venuelink, venuename, addressurl, venueaddress, description.encode('UTF-8'), readmore, musicurl, ticketurl)
+            
             try:  # Might crash with weird characters.
-                writer.writerow((date, genre, artistpic, local, doors, price, starttime, eventurl, artist, venuelink, venuename, addressurl, venueaddress, description, readmore, musicurl, ticketurl))
-                backupwriter.writerow((date, genre, artistpic, local, doors, price, starttime, eventurl, artist, venuelink, venuename, addressurl, venueaddress, description, readmore, musicurl, ticketurl))
+                writer.writerow(write1)
+                backupwriter.writerow(write1)
             except:
                 UTFcounter += 1
                 try:
-                    writer.writerow((date, genre, artistpic, local, doors, price, starttime, eventurl, artist, venuelink, venuename, addressurl, venueaddress, description.encode('UTF-8'), readmore, musicurl, ticketurl))
-                    backupwriter.writerow((date, genre, artistpic, local, doors, price, starttime, eventurl, artist, venuelink, venuename, addressurl, venueaddress, description.encode('UTF-8'), readmore, musicurl, ticketurl))
+                    writer.writerow(write2)
+                    backupwriter.writerow(write2)
                     print("Using UTF encoding for description", date)
                 except:
-                    writer.writerow((date, genre, artistpic, local, doors, price, starttime, eventurl, artist.encode('UTF-8'), venuelink, venuename, addressurl, venueaddress, description.encode('UTF-8'), readmore, musicurl, ticketurl))
-                    backupwriter.writerow((date, genre, artistpic, local, doors, price, starttime, eventurl, artist.encode('UTF-8'), venuelink, venuename, addressurl, venueaddress, description.encode('UTF-8'), readmore, musicurl, ticketurl))
+                    writer.writerow(write3)
+                    backupwriter.writerow(write3)
                     print("Using UTF encoding for artist and description", date)
 csvFile.close()
 backupCVS.close()
@@ -195,4 +185,3 @@ if answer == "y" or answer == "Y":
     print("New used links file created.")
 else:
     print("New used links file was NOT created.")
-print("BE SURE TO MAKE SURE THAT TICKET LINKS ARE CORRECT!!!!!  NEW CODE ADDED BUT NOT YET TESTED!!!!!!! ******** ############# !!!!!!!!!!!!!!1 %%%%%%%%%%%55")
