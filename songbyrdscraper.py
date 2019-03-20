@@ -37,7 +37,7 @@ venueaddress = "2477 18th St. NW, Washington, DC 20009"
 
 fileName = '../scraped/scraped-songbyrd.csv'
 backupFileName = '../scraped/BackupFiles/SongbyrdScraped'
-[writer, backupwriter,datetoday] = scraperLibrary.startCsvs(today,fileName,backupFileName)
+[writer, backupwriter,datetoday,csvFile,backupCSV] = scraperLibrary.startCsvs(today,fileName,backupFileName)
 
 html = urlopen("http://www.songbyrddc.com/events/")
 eventObj = BeautifulSoup(html)
@@ -74,8 +74,15 @@ for link in eventObj.findAll("a",href=re.compile("^(\/shows\/)")): #The link to 
         price = price.strip()
         artistlong = bsObj.find("title").get_text().strip()
         artist = re.findall("(.+)\s+\@",artistlong)[0].title()
-        if "listening party" in artist.lower() or "music trivia" in artist.lower() or "watch party" in artist.lower() or "diary of an r&b classic" in artist.lower():
+        skipArtists = ["punkhouse comedy","listening party","music trivia","karaoke.sexy","watch party","diary of an r&b","classic album sundays","@ dangerous","@ milkboy","@ union","@ fillmore","cancelled"]
+        skip = False
+        for skipArtist in skipArtists:
+            if skipArtist in artist.lower():
+                skip = True
+                break
+        if skip:
             continue
+        artist = artist.replace("Project Hera Presents: ","")
         date = bsObj.find("span", {"class":"eventDate"}).attrs["v"]
         ticketweb = bsObj.find("a",{"class":"eventbtn"}).attrs["href"]
         dadate = datetime.datetime.strptime(date, '%d-%b-%Y')  #date is in "01-Jul-2018" format
@@ -141,7 +148,7 @@ for link in eventObj.findAll("a",href=re.compile("^(\/shows\/)")): #The link to 
         description = description.strip()
         description = description.strip("--")  # If description now leads w/ this, bye-bye
 
-        [description, readmore] = scraperLibrary.descriptionTrim(description, ["ON SALE NOW!"], 800, artistweb, newhtml)
+        [description, readmore] = scraperLibrary.descriptionTrim(description, ["ON SALE NOW!","LiveNation and Songbyrd Present ","Songbyrd Presents ","Songbyrd Vinyl Lounge "], 800, artistweb, newhtml)
 
         write1 = (date, genre, artistpic, local, doors, price, starttime, artistweb, artist, venuelink, venuename, addressurl, venueaddress, description, readmore, musicurl, ticketweb)
         write2 = (date, genre, artistpic, local, doors, price, starttime, artistweb, artist, venuelink, venuename, addressurl, venueaddress, description.encode('UTF-8'), readmore, musicurl, ticketweb)

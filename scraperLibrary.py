@@ -64,7 +64,7 @@ def startCsvs(today,fileName,backupFileName):
     backupCSV = open(backupfile, 'w', newline = '') # A back-up file, just in case
     backupwriter = csv.writer(backupCSV)
     backupwriter.writerow(write0)
-    return [writer, backupwriter, datetoday]
+    return [writer, backupwriter, datetoday, csvFile, backupCSV]
 
     
 ### descriptionTrim - EXPECTED INPUTS:
