@@ -30,12 +30,12 @@ def previousScrape(usedLinksFile, dateFormat, numDays, linkCheckUrl):
                 pageanddate.add((line[0],line[1],line[2]))  #Create list of links that have been checked before
                 pages.add(line[0])
                 if not linkCheckUrl and dadate.date() > today-datetime.timedelta():
+                    if linkCheckUrl.endswith('\\') or line[0].startswith('\\') or linkCheckUrl == '':
+                        testurl = linkCheckUrl + line[0]
+                    else:
+                        testurl = linkCheckUrl + '\\' + line[0]
                     try: #test to ensure that previously-scraped events are still valid...
-                        if lineCheckUrl.endswith('\\') or line[0].startswith('\\') or lineCheckUrl == '':
-                            testurl = linkCheckUrl + line[0]
-                        else:
-                            testurl = linkCheckUrl + '\\' + line[0]
-                        diditwork = requests.get(url)
+                        diditwork = requests.get(testurl)
                         if diditwork.status_code > 299:
                             print("Trying to open", testurl, "event on", line[1], "returned an error code")
                     except:
