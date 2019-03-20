@@ -7,29 +7,15 @@ import re #real expressions
 import csv #comma-separated values
 import datetime
 
-pages = set() #create an empty set of pages
-pageanddate = set() #For list of used links WITH event date and date on which info was added to file
-today = datetime.date.today()
-yesno = ("y","Y","n","N")
-answer = ""
+import scraperLibrary #custom library for venue site scraping
 
-while answer not in yesno:
-    answer = input("Do you want to open used links file? (Skip previously-used links?) ")
-if answer == "y" or answer == "Y":
-    with open('../scraped/usedlinks-pearl.csv', 'r') as previousscrape: 
-        reader = csv.reader(previousscrape)
-        previousinfo = list(reader)
-    for line in previousinfo:
-        dadate = datetime.datetime.strptime((line[1].strip()), '%m/%d/%Y') #Date in table is in  10/31/2017 format.
-        if dadate.date() > today-datetime.timedelta(days=31):  #If used link is NOT for an event that is more than a month old, add it to list
-            pageanddate.add((line[0],line[1],line[2]))  #Create list of links that have been checked before
-            pages.add(line[0])
-            try:  # Check to make sure that previously scraped events are still valid
-                tryitout = "http://www.pearlstreetwarehouse.com" + line[0]
-                diditwork = urlopen(tryitout)
-            except:
-                print(line[0],"caused an error...")
-    previousscrape.close()
+
+usedLinksFile = '../scraped/usedlinks-pearl.csv'
+dateFormat = '%m/%d/%Y'
+numDays = 30
+linkCheckUrl = "http://www.pearlstreetwarehouse.com"
+
+[today, pages, pageanddate] = scraperLibrary.previousScrape(usedLinksFile, dateFormat, numDays, linkCheckUrl)
 
 UTFcounter = 0
 
@@ -63,7 +49,8 @@ for link in bsObj.findAll("a",href=re.compile("^(\/event\/)")): #The link to eac
             price = bsObj.find("h3", {"class":"price-range"}).get_text().strip() # Pulls the price, which could be a price range...
         except:
             price = "Free!"  # In the first instance in which price-range failed, event was free...
-            print("Verify that ", newhtml, " is indeed free!!!!!!!")
+            if "free" not in newhtml:
+                print("Verify that ", newhtml, " is indeed free!!!!!!!")
         datelongest = bsObj.find("span", {"class":"value-title"}).attrs["title"]
         datelonger = re.findall("20[12][0-9]\-[0-2][0-9]\-[0-3][0-9]T[0-9]{2}\:[0-9]{2}\:[0-9]{2}", datelongest)[0]
         datelong = datetime.datetime.strptime(datelonger, "%Y-%m-%dT%H:%M:%S")
@@ -75,6 +62,8 @@ for link in bsObj.findAll("a",href=re.compile("^(\/event\/)")): #The link to eac
             artist = bsObj.find("span", {"class":"artist-name"}).get_text().strip() # Event name
         except:
             artist = bsObj.find("h1", {"class":"headliners"}).get_text().strip() # Event name
+        if "private event" in artist.lower():
+            continue
         try:
             artistweb = bsObj.find("li", {"class":"web"}).find("a").attrs["href"]  #THIS finds the first instance of a div with a class of "music_links", then digs deeper, finding the first instance w/in that div of a child a, and pulls the href.  BUT - since some artists may not have link, using try/except
         except:
@@ -89,55 +78,49 @@ for link in bsObj.findAll("a",href=re.compile("^(\/event\/)")): #The link to eac
                     description += onepart + " "
             except:
                 print("couldn't find description...")
-        description = description.replace("\n"," ") # Eliminates annoying carriage returns 
-        description = description.replace("\r"," ") # Eliminates annoying carriage returns 
-        if (len(description) > 700): # If the description is too long...  
-            descriptionsentences = description.split(". ") #Let's split it into sentences!
-            description = ""
-            for sentence in descriptionsentences:  #Let's rebuild, sentence-by-sentence!
-                description += sentence + ". "
-                if (len(description) > 650):  #Once we exceed 700, dat's da last sentence
-                    break
-            readmore = artistweb #We had to cut it short, so you can read more at the event page UNLESS we found an artist link (in which case, go to their page)
-        elif artistweb != newhtml:  #If description is short and we found an artist link (so artistweb is different than event page)
-            readmore = artistweb #Have the readmore link provide more info about the artist
-        else:
-            readmore = "" #No artist link and short description - no need for readmore
-        descriptionjammed = description.replace(" ","") # Create a string with no spaces
+
+        [description, readmore] = scraperLibrary.descriptionTrim(description, [], 800, artistweb, newhtml)
+        
+        descriptionJammed = description.replace(" ","") # Create a string with no spaces
+        if len(re.findall("[A-Z]{15,}", descriptionJammed)) > 0:
+            description = scraperLibrary.killCapAbuse(description)
+
         try:
-            ALLCAPS = re.findall("[A-Z]{15,}", descriptionjammed)[0] # If 15 or more sequential characters in the description are ALL CAPS, let's change the description!
-            description = description.rstrip(".") # If there's a period at the end, get rid of it.
-            separatesentences = description.split(".") #Let's split it into sentences!
-            description = ""
-            for onesentence in separatesentences:  #Let's rebuild, sentence-by-sentence!
-                onesentence = onesentence.lstrip()  #Remove leading whitespace so that the capitalization works properly
-                description += onesentence.capitalize() + ". "  #Capitalize ONLY the first letter of each sentence - if proper names aren't capitalized or acronyms become faulty, then that's their fault for abusing ALL CAPS
-        except:
-            aintnobigthang = True # placeholder code (No excessive ALL CAPS abuse found)
-        try:
-            ticketweb = bsObj.find("a", {"class":"tickets"}).attrs["href"]
+            ticketurl = bsObj.find("a", {"class":"tickets"}).attrs["href"]
         except:
             print("Could not find ticket link for", newhtml)
-            pages.add(newPage)
-            pageanddate.add((newPage,date,datetoday))  # Add link to list, paired with event date and today's date
-            continue
+            ticketurl = ""
         musicurl = ""
+        try:
+            iframes = bsObj.findAll("iframe") # If there's a video, grab it and toss it into the "buy music" column.  BUT - skip iframes that don't contain youtubes
+            for onei in iframes:  
+                if "youtube" in onei.attrs["src"]:
+                    musicurl = onei.attrs["src"]
+                    break  # Once first video is found, move along (don't take back-up band's video over headliner; don't have 'else' overwrite found link)
+                else:
+                    musicurl = ""  # In case there are iframes, but no videos
+        except:
+            musicurl = ""
         try:   
             artistpic = bsObj.find("div", {"class":"event-detail"}).find("img").attrs["src"]
         except:
             artistpic = ""
+        write1 = (date, genre, artistpic, local, doors, price, starttime, artistweb, artist, venuelink, venuename, addressurl, venueaddress, description, readmore, musicurl, ticketurl)
+        write2 = (date, genre, artistpic, local, doors, price, starttime, artistweb, artist, venuelink, venuename, addressurl, venueaddress, description.encode('UTF-8'), readmore, musicurl, ticketurl)
+        write3 = (date, genre, artistpic, local, doors, price, starttime, newhtml, artist.encode('UTF-8'), venuelink, venuename, addressurl, venueaddress, description.encode('UTF-8'), readmore, musicurl, ticketurl)
+        
         try:  # Might crash with weird characters.
-            writer.writerow((date, genre, artistpic, local, doors, price, starttime, newhtml, artist, venuelink, venuename, addressurl, venueaddress, description, readmore, musicurl, ticketweb))
-            backupwriter.writerow((date, genre, artistpic, local, doors, price, starttime, newhtml, artist, venuelink, venuename, addressurl, venueaddress, description, readmore, musicurl, ticketweb))
+            writer.writerow(write1)
+            backupwriter.writerow(write1)
         except:
             UTFcounter += 1
             try:
-                writer.writerow((date, genre, artistpic, local, doors, price, starttime, newhtml, artist, venuelink, venuename, addressurl, venueaddress, description.encode('UTF-8'), readmore, musicurl, ticketweb))
-                backupwriter.writerow((date, genre, artistpic, local, doors, price, starttime, newhtml, artist, venuelink, venuename, addressurl, venueaddress, description.encode('UTF-8'), readmore, musicurl, ticketweb))
+                writer.writerow(write2)
+                backupwriter.writerow(write2)
                 print("Using UTF encoding for description", date)
             except:
-                writer.writerow((date, genre, artistpic, local, doors, price, starttime, newhtml, artist.encode('UTF-8'), venuelink, venuename, addressurl, venueaddress, description.encode('UTF-8'), readmore, musicurl, ticketweb))
-                backupwriter.writerow((date, genre, artistpic, local, doors, price, starttime, newhtml, artist.encode('UTF-8'), venuelink, venuename, addressurl, venueaddress, description.encode('UTF-8'), readmore, musicurl, ticketweb))
+                writer.writerow(write3)
+                backupwriter.writerow(write3)
                 print("Using UTF encoding for artist and description", date)
         pages.add(newPage)
         pageanddate.add((newPage,date,datetoday))  # Add link to list, paired with event date and today's date

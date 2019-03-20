@@ -30,7 +30,7 @@ if answer == "y" or answer == "Y":
             testurl = "https://www.gypsysallys.com" + line[0]
             if dadate.date() > today-datetime.timedelta():
                 try: #test to ensure that previously-scraped events are still valid...
-                    diditwork = requests.get(url)
+                    diditwork = requests.get(testurl)
                     if diditwork.status_code > 299:
                         print("Trying to open", testurl, "event on", line[1], "returned an error code")
                 except:
