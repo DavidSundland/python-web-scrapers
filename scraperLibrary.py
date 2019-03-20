@@ -2,6 +2,19 @@ import csv #comma-separated values
 import re
 import datetime
 
+def startCsvs(today,fileName,backupFileName):
+    write0 = ("DATE", "GENRE", "FEATURE?", "LOCAL?", "DOORS?", "PRICE", "TIME", "ARTIST WEBSITE", "ARTIST", "VENUE LINK", "VENUE NAME", "ADDRESS URL", "VENUE ADDRESS", "DESCRIPTION", "READ MORE URL", "MUSIC URL", "TICKET URL")
+    csvFile = open(fileName, 'w', newline='') #The CSV file to which the scraped info will be copied.
+    writer = csv.writer(csvFile)
+    writer.writerow(write0)
+    datetoday = str(datetime.date.today())
+    backupfile = backupFileName + datetoday + ".csv"
+    backupCSV = open(backupfile, 'w', newline = '') # A back-up file, just in case
+    backupwriter = csv.writer(backupCSV)
+    backupwriter.writerow(write0)
+    return [writer, backupwriter]
+
+
 ### previousScrape - EXPECTED INPUTS:
 # usedLinksFile - name of file to which previously scraped events were noted
 # dateFormat - format of date which venue uses

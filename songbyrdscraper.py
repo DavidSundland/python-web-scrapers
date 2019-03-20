@@ -6,6 +6,9 @@ import re #real expressions
 import csv #comma-separated values
 import datetime
 
+import scraperLibrary #custom library for venue site scraping
+
+
 pages = set() #create an empty set of pages
 pageanddate = set() #For list of used links WITH event date and date on which info was added to file
 today = datetime.date.today()
@@ -23,25 +26,28 @@ if answer == "y" or answer == "Y":
         pages.add(line[0])
     previousscrape.close()
 
-counter = 0  #to keep track of progress while program running
 UTFcounter = 0
 
-local = ""  # Add test for local in future
-genre = "Rock & Pop"  # Add test for genre in future
+local = "" 
+genre = "Rock & Pop"
 venuelink = "http://www.songbyrddc.com/"
 venuename = "Songbyrd Cafe"
 addressurl = "https://goo.gl/maps/Vnzq6cjvcjv"
 venueaddress = "2477 18th St. NW, Washington, DC 20009"
-musicurl = ""  ########## Make another attempt to extract musicurls in the future
+musicurl = ""
 
-csvFile = open('../scraped/scraped-songbyrd.csv', 'w', newline='') #The CSV file to which the scraped info will be copied.  NOTE - need to define the 'newline' as empty to avoid empty rows in spreadsheet
-writer = csv.writer(csvFile)
-writer.writerow(("DATE", "GENRE", "FEATURE?", "LOCAL?", "DOORS?", "PRICE", "TIME", "ARTIST WEBSITE", "ARTIST", "VENUE LINK", "VENUE NAME", "ADDRESS URL", "VENUE ADDRESS", "DESCRIPTION", "READ MORE URL", "MUSIC URL", "TICKET URL"))
-datetoday = str(datetime.date.today())
-backupfile = "../scraped/BackupFiles/SongbyrdScraped" + datetoday + ".csv"
-backupCSV = open(backupfile, 'w', newline = '') # A back-up file, just in case
-backupwriter = csv.writer(backupCSV)
-backupwriter.writerow(("DATE", "GENRE", "FEATURE?", "LOCAL?", "DOORS?", "PRICE", "TIME", "ARTIST WEBSITE", "ARTIST", "VENUE LINK", "VENUE NAME", "ADDRESS URL", "VENUE ADDRESS", "DESCRIPTION", "READ MORE URL", "MUSIC URL", "TICKET URL"))
+fileName = '../scraped/scraped-songbyrd.csv'
+backupFileName = '../scraped/BackupFiles/SongbyrdScraped'
+[writer, backupwriter] = scraperLibrary.startCsvs(today,fileName,backupFileName)
+
+#csvFile = open('../scraped/scraped-songbyrd.csv', 'w', newline='') #The CSV file to which the scraped info will be copied.  NOTE - need to define the 'newline' as #empty to avoid empty rows in spreadsheet
+#writer = csv.writer(csvFile)
+#writer.writerow(("DATE", "GENRE", "FEATURE?", "LOCAL?", "DOORS?", "PRICE", "TIME", "ARTIST WEBSITE", "ARTIST", "VENUE LINK", "VENUE NAME", "ADDRESS URL", "VENUE #ADDRESS", "DESCRIPTION", "READ MORE URL", "MUSIC URL", "TICKET URL"))#
+#datetoday = str(datetime.date.today())
+#backupfile = "../scraped/BackupFiles/SongbyrdScraped" + datetoday + ".csv"
+#backupCSV = open(backupfile, 'w', newline = '') # A back-up file, just in case
+#backupwriter = csv.writer(backupCSV)
+#backupwriter.writerow(("DATE", "GENRE", "FEATURE?", "LOCAL?", "DOORS?", "PRICE", "TIME", "ARTIST WEBSITE", "ARTIST", "VENUE LINK", "VENUE NAME", "ADDRESS URL", "VENUE ADDRESS", "DESCRIPTION", "READ MORE URL", "MUSIC URL", "TICKET URL"))
 
 html = urlopen("http://www.songbyrddc.com/events/")
 bsObj = BeautifulSoup(html)
