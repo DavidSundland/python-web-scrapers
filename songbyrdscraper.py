@@ -34,26 +34,16 @@ venuelink = "http://www.songbyrddc.com/"
 venuename = "Songbyrd Cafe"
 addressurl = "https://goo.gl/maps/Vnzq6cjvcjv"
 venueaddress = "2477 18th St. NW, Washington, DC 20009"
-musicurl = ""
 
 fileName = '../scraped/scraped-songbyrd.csv'
 backupFileName = '../scraped/BackupFiles/SongbyrdScraped'
-[writer, backupwriter] = scraperLibrary.startCsvs(today,fileName,backupFileName)
-
-#csvFile = open('../scraped/scraped-songbyrd.csv', 'w', newline='') #The CSV file to which the scraped info will be copied.  NOTE - need to define the 'newline' as #empty to avoid empty rows in spreadsheet
-#writer = csv.writer(csvFile)
-#writer.writerow(("DATE", "GENRE", "FEATURE?", "LOCAL?", "DOORS?", "PRICE", "TIME", "ARTIST WEBSITE", "ARTIST", "VENUE LINK", "VENUE NAME", "ADDRESS URL", "VENUE #ADDRESS", "DESCRIPTION", "READ MORE URL", "MUSIC URL", "TICKET URL"))#
-#datetoday = str(datetime.date.today())
-#backupfile = "../scraped/BackupFiles/SongbyrdScraped" + datetoday + ".csv"
-#backupCSV = open(backupfile, 'w', newline = '') # A back-up file, just in case
-#backupwriter = csv.writer(backupCSV)
-#backupwriter.writerow(("DATE", "GENRE", "FEATURE?", "LOCAL?", "DOORS?", "PRICE", "TIME", "ARTIST WEBSITE", "ARTIST", "VENUE LINK", "VENUE NAME", "ADDRESS URL", "VENUE ADDRESS", "DESCRIPTION", "READ MORE URL", "MUSIC URL", "TICKET URL"))
+[writer, backupwriter,datetoday] = scraperLibrary.startCsvs(today,fileName,backupFileName)
 
 html = urlopen("http://www.songbyrddc.com/events/")
-bsObj = BeautifulSoup(html)
-for link in bsObj.findAll("a",href=re.compile("^(\/shows\/)")): #The link to each unique event page begins with "/shows/"
+eventObj = BeautifulSoup(html)
+for link in eventObj.findAll("a",href=re.compile("^(\/shows\/)")): #The link to each unique event page begins with "/shows/"
     newPage = link.attrs["href"] #extract the links
-    try:
+    try: # event URLs include the date, in one of two formats
         dateonly = re.findall("[0-9]{4}\-[0-9]{1,2}\-[0-9]{1,2}",newPage)[0]
         dadate = datetime.datetime.strptime(dateonly, '%Y-%m-%d') # If this is a past event...
         if (dadate.date() < today):
@@ -69,35 +59,30 @@ for link in bsObj.findAll("a",href=re.compile("^(\/shows\/)")): #The link to eac
                 pageanddate.add((newPage,str(dadate),datetoday)) # Add to file so not scraped in future
                 continue
         except:
-            chitchat = "Hey, how about that local team?"
+            continue # if date not in URL, not for a live music event
     if newPage not in pages: #A new link has been found
-#        counter += 1
         newhtml = "http://www.songbyrddc.com" + newPage
         artistweb = newhtml
         eventhtml = urlopen(newhtml)
-        eventObj = BeautifulSoup(eventhtml)
+        bsObj = BeautifulSoup(eventhtml)
         print(newhtml)
-        price = eventObj.find("div",{"class":"event-cost"}).get_text().strip()
+        price = bsObj.find("div",{"class":"event-cost"}).get_text().strip()
         if "sold out" in price.lower():
             continue
-        price = price.replace("Facebook RSVP","")
         price = price.replace("BUY TICKETS","")
-        price = price.replace("FREE RSVP","")
-        price = price.replace("RSVP!","")
-        price = price.replace("RSVP","")
+        price = re.sub('(Facebook\s)*(Free\s)*(FREE\s)*RSVP\!*','',price)
         price = price.strip()
-        artistlong = eventObj.find("title").get_text().strip()
+        artistlong = bsObj.find("title").get_text().strip()
         artist = re.findall("(.+)\s+\@",artistlong)[0].title()
         if "listening party" in artist.lower() or "music trivia" in artist.lower() or "watch party" in artist.lower() or "diary of an r&b classic" in artist.lower():
             continue
-        date = eventObj.find("span", {"class":"eventDate"}).attrs["v"]
-        ticketweb = eventObj.find("a",{"class":"eventbtn"}).attrs["href"]
+        date = bsObj.find("span", {"class":"eventDate"}).attrs["v"]
+        ticketweb = bsObj.find("a",{"class":"eventbtn"}).attrs["href"]
         dadate = datetime.datetime.strptime(date, '%d-%b-%Y')  #date is in "01-Jul-2018" format
         if dadate.date() > today+datetime.timedelta(days=61):  #If event is more than 2 months away, skip it for now (a lot can happen in 2 months!):
             continue
             
-        ##### MARK - CONTINUE FROM HERE; MAKE SURE TO UN-INDENT APPROPRIATELY; NOTE THAT TIME CAN BE IN "12:00 PM" OR "12 PM" FORMAT.  ALWAYS PRECEDED BY "DOORS" &/OR "SHOW"?
-        xss = eventObj.findAll("div",{"class":"col-xs-6"})
+        xss = bsObj.findAll("div",{"class":"col-xs-6"})
         for onexs in xss:
             if re.search("[sS][hH][oO][wW]\:*\s?[0-9]{1,2}",onexs.get_text()):
                 try:
@@ -105,15 +90,29 @@ for link in bsObj.findAll("a",href=re.compile("^(\/shows\/)")): #The link to eac
                 except:
                     starttime = re.findall("[sS][hH][oO][wW]\:*\s+([0-9]{1,2}\:?[0-9]{0,2})",onexs.get_text())[0] + "PM"
                     print("in starttime except; is AM/PM correct?")
-#                print(starttime, date)
                 break
         doors = " "
         artistpic = ""
-        pics = eventObj.findAll("img")
+        pics = bsObj.findAll("img")
         for apic in pics:
             if not apic.attrs["src"].startswith("/images"):
                 artistpic = "https://www.songbyrddc.com" + apic.attrs["src"]
-        descriptionfinder = eventObj.find("div", {"class":"event-description"})
+        musicurl = ""
+        try:
+            iframes = bsObj.findAll("iframe") # If there's a video, grab it and toss it into the "buy music" column.  BUT - skip iframes that don't contain youtubes
+            for onei in iframes:  
+                if "youtube" in onei.attrs["src"]:
+                    musicurl = onei.attrs["src"]
+                    break  # Once first video is found, move along (don't take back-up band's video over headliner; don't have 'else' overwrite found link)
+                else:
+                    if "soundcloud" in onei.attrs["src"]:
+                        musicurl = onei.attrs["src"]
+                        break  # If first iframe has soundcloud link, grab it and move along
+                    else:
+                        musicurl = ""  # In case there are iframes, but no videos
+        except:
+            musicurl = ""
+        descriptionfinder = bsObj.find("div", {"class":"event-description"})
         description = ""
 #        divcounter = 1
         parts = descriptionfinder.findAll(["div","p"])
@@ -139,59 +138,35 @@ for link in bsObj.findAll("a",href=re.compile("^(\/shows\/)")): #The link to eac
                 if thetext.lower().startswith("vinyl lounge"):
                     continue
                 description += thetext + " "
-        description = description.replace("\n"," ") # Eliminates annoying carriage returns 
-        description = description.replace("\r"," ") # Eliminates annoying carriage returns 
-        description = description.replace("ON SALE NOW!","")
         description = description.strip()
         description = description.strip("--")  # If description now leads w/ this, bye-bye
-        if (len(description) > 700): # If the description is too long...  
-            descriptionsentences = description.split(". ") #Let's split it into sentences!
-            description = ""
-            for sentence in descriptionsentences:  #Let's rebuild, sentence-by-sentence!
-                description += sentence + ". "
-                if (len(description) > 650):  #Once we exceed 650, dat's da last sentence
-                    break
-#            readmore = newhtml #No longer using the readmore for extra long descriptions, since link to event provided...
-#        else:
-#            readmore = "" #We included the full description, so no need to have a readmore link
-        readmore = "" ###################### KEEP CHECKING IN FUTURE TO SEE IF THEY START CONSISTENTLY PROVIDING LINK TO ARTIST WEBSITE
+
+        [description, readmore] = scraperLibrary.descriptionTrim(description, ["ON SALE NOW!"], 800, artistweb, newhtml)
+
+        write1 = (date, genre, artistpic, local, doors, price, starttime, artistweb, artist, venuelink, venuename, addressurl, venueaddress, description, readmore, musicurl, ticketweb)
+        write2 = (date, genre, artistpic, local, doors, price, starttime, artistweb, artist, venuelink, venuename, addressurl, venueaddress, description.encode('UTF-8'), readmore, musicurl, ticketweb)
+        write3 = (date, genre, artistpic, local, doors, price, starttime, artistweb, artist.encode('UTF-8'), venuelink, venuename, addressurl, venueaddress, description.encode('UTF-8'), readmore, musicurl, ticketweb)
         try:  # Might crash with weird characters.
-            writer.writerow((date, genre, artistpic, local, doors, price, starttime, artistweb, artist, venuelink, venuename, addressurl, venueaddress, description, readmore, musicurl, ticketweb))
-            backupwriter.writerow((date, genre, artistpic, local, doors, price, starttime, artistweb, artist, venuelink, venuename, addressurl, venueaddress, description, readmore, musicurl, ticketweb))
+            writer.writerow((write1))
+            backupwriter.writerow((write1))
         except:
             UTFcounter += 1
             try:
-                writer.writerow((date, genre, artistpic, local, doors, price, starttime, artistweb, artist, venuelink, venuename, addressurl, venueaddress, description.encode('UTF-8'), readmore, musicurl, ticketweb))
-                backupwriter.writerow((date, genre, artistpic, local, doors, price, starttime, artistweb, artist, venuelink, venuename, addressurl, venueaddress, description.encode('UTF-8'), readmore, musicurl, ticketweb))
+                writer.writerow((write2))
+                backupwriter.writerow((write2))
                 print("Using UTF encoding for description", date)
             except:
-                writer.writerow((date, genre, artistpic, local, doors, price, starttime, artistweb, artist.encode('UTF-8'), venuelink, venuename, addressurl, venueaddress, description.encode('UTF-8'), readmore, musicurl, ticketweb))
-                backupwriter.writerow((date, genre, artistpic, local, doors, price, starttime, artistweb, artist.encode('UTF-8'), venuelink, venuename, addressurl, venueaddress, description.encode('UTF-8'), readmore, musicurl, ticketweb))
+                writer.writerow((write3))
+                backupwriter.writerow((write3))
                 print("Using UTF encoding for artist and description", date)
         pages.add(newPage)
         pageanddate.add((newPage,date,datetoday))  # Add link to list, paired with event date and today's date
 csvFile.close()
 backupCSV.close()
 
-yesno = ("y","Y","n","N")
-answer = ""
-
-while answer not in yesno:
-    answer = input("Do you want to write to used links file? (Overwrite existing used links file?) ")
-if answer == "y" or answer == "Y":
-    linksBackup = "../scraped/BackupFiles/SongbyrdUsedLinks" + datetoday + ".csv"
-    linksFile = open('../scraped/usedlinks-songbyrd.csv', 'w', newline='') #Save the list of links to avoid redundancy in future scraping
-    backupLinks = open(linksBackup, 'w', newline='')
-    linkswriter = csv.writer(linksFile)  #Write the file at the end so file is not overwritten if error encountered during scraping
-    backupWriter = csv.writer(backupLinks)
-    for heresalink in pageanddate:
-        linkswriter.writerow((heresalink[0], heresalink[1], heresalink[2])) # Write this event to a file so that it will be skipped during future scrapes 
-        backupWriter.writerow((heresalink[0], heresalink[1], heresalink[2]))
-    linksFile.close()
-    backupLinks.close()
-    print("New used links file created.")
-else:
-    print("New used links file was NOT created.")
+fileName = '../scraped/usedlinks-songbyrd.csv'
+backupFileName = '../scraped/BackupFiles/SongbyrdUsedLinks'
+scraperLibrary.saveLinks(datetoday,fileName,backupFileName,pageanddate)
 
 if (UTFcounter == 0):
     print("No encoding issues to correct!")

@@ -2,25 +2,14 @@ import csv #comma-separated values
 import re
 import datetime
 
-def startCsvs(today,fileName,backupFileName):
-    write0 = ("DATE", "GENRE", "FEATURE?", "LOCAL?", "DOORS?", "PRICE", "TIME", "ARTIST WEBSITE", "ARTIST", "VENUE LINK", "VENUE NAME", "ADDRESS URL", "VENUE ADDRESS", "DESCRIPTION", "READ MORE URL", "MUSIC URL", "TICKET URL")
-    csvFile = open(fileName, 'w', newline='') #The CSV file to which the scraped info will be copied.
-    writer = csv.writer(csvFile)
-    writer.writerow(write0)
-    datetoday = str(datetime.date.today())
-    backupfile = backupFileName + datetoday + ".csv"
-    backupCSV = open(backupfile, 'w', newline = '') # A back-up file, just in case
-    backupwriter = csv.writer(backupCSV)
-    backupwriter.writerow(write0)
-    return [writer, backupwriter]
 
-
-### previousScrape - EXPECTED INPUTS:
+### previousScrape - creates list of scraped URLs from list saved during previous scrape
+## EXPECTED INPUTS:
 # usedLinksFile - name of file to which previously scraped events were noted
 # dateFormat - format of date which venue uses
 # numDays - minimum date for which previous scrapes NOT be retained
 # linkCheckUrl - URL to which event links should be appended to ensure that previously scraped future events did not become invalid.  "" should be provided if event links do not need to be prepended; False should be provided if previously scraped events do not need to be verified
-### RETURNS:
+## RETURNS:
 # today - today's date as a datetime object
 # pages - previously used links; will be supplemented with links checked in current scrape
 # pageanddate - links, event date, and scrape date for previously scraped events (will be supplemented w/ current scrapes and become next used links file)
@@ -55,6 +44,27 @@ def previousScrape(usedLinksFile, dateFormat, numDays, linkCheckUrl):
                         print("Trying to open", testurl, "event on", line[1], "did not work.")
         previousscrape.close()
     return [today, pages, pageanddate]
+
+    
+### startCSVs - creates CSV files to which scraped information will be saved and creates headers
+## EXPECTED INPUTS:
+# today - today's date as a datetime object (created by previousScrape)
+# fileName - name & path of principal CSV file
+# backupFileName - name & path of backup file, BUT WITHOUT .csv EXTENSION
+## RETURNS:
+# writer & backupwriter - objects via which CSV files will be populated
+# datetoday - today's date in string format
+def startCsvs(today,fileName,backupFileName):
+    write0 = ("DATE", "GENRE", "FEATURE?", "LOCAL?", "DOORS?", "PRICE", "TIME", "ARTIST WEBSITE", "ARTIST", "VENUE LINK", "VENUE NAME", "ADDRESS URL", "VENUE ADDRESS", "DESCRIPTION", "READ MORE URL", "MUSIC URL", "TICKET URL")
+    csvFile = open(fileName, 'w', newline='') #The CSV file to which the scraped info will be copied.
+    writer = csv.writer(csvFile)
+    writer.writerow(write0)
+    datetoday = str(datetime.date.today())
+    backupfile = backupFileName + datetoday + ".csv"
+    backupCSV = open(backupfile, 'w', newline = '') # A back-up file, just in case
+    backupwriter = csv.writer(backupCSV)
+    backupwriter.writerow(write0)
+    return [writer, backupwriter, datetoday]
 
     
 ### descriptionTrim - EXPECTED INPUTS:
@@ -129,3 +139,23 @@ def getLocalList():
     localList = compactWord(text).split(';')
     handle.close()
     return localList
+
+def saveLinks(datetoday,fileName,backupFileName,pageanddate):
+    yesno = ("yes","y","no","n")
+    answer = ""
+    while answer.lower() not in yesno:
+        answer = input("Do you want to write to used links file? (Overwrite existing used links file?) ")
+    if answer.lower() == "y" or answer == "yes":
+        linksFile = open(fileName, 'w', newline='') #Save the list of links to avoid redundancy in future scraping
+        linksBackup = backupFileName + datetoday + ".csv"
+        backupLinks = open(linksBackup, 'w', newline='')
+        linkswriter = csv.writer(linksFile)  #Write the file at the end so file is not overwritten if error encountered during scraping
+        backupWriter = csv.writer(backupLinks)
+        for heresalink in pageanddate:
+            linkswriter.writerow((heresalink[0], heresalink[1], heresalink[2])) # Write this event to a file so that it will be skipped during future scrapes 
+            backupWriter.writerow((heresalink[0], heresalink[1], heresalink[2]))
+        linksFile.close()
+        backupLinks.close()
+        print("New used links file created.")
+    else:
+        print("New used links file was NOT created.")
