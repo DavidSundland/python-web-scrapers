@@ -80,9 +80,11 @@ for link in bsObj.findAll("a",href=re.compile("^(http\:\/\/www\.rockandrollhotel
             continue
         starttime = bsObj.find("div", {"class":"date_right"}).get_text() # Pulls time, including pm (spreadsheet doesn't care about that)
         artist = bsObj.find("div", {"class":"artist_title_opener_single"}).get_text().strip() # Event name
-        if artist.lower() == "closed" or "TOASTY BINGO" in artist.upper() or "TRIVIA NIGHT" in artist.upper() or "bring home the bacon" in artist.lower() or "dj bo" in artist.lower():
+        if artist.lower() == "closed" or "TOASTY BINGO" in artist.upper() or "TRIVIA NIGHT" in artist.upper() or "bring home the bacon" in artist.lower() or "dj bo" in artist.lower() or "bar open" in artist.lower():
             continue
         artist = artist.replace("SUMMIT","Summit")
+        if len(re.findall('[A-Z]',artist)) >= 6 and len(re.findall('[A-Z]',artist)) >= len(artist)/2: #if CAPS are abused...
+            artist = scraperLibrary.titleCase(artist)
         try:
             artistweb = bsObj.find("div", {"class":"music_links"}).find("a").attrs["href"]  #THIS finds the first instance of a div with a class of "music_links", then digs deeper, finding the first instance w/in that div of a child a, and pulls the href.  BUT - since some artists may not have link, using try/except
         except:
@@ -126,8 +128,8 @@ for link in bsObj.findAll("a",href=re.compile("^(http\:\/\/www\.rockandrollhotel
         else:
             artistpic = ""
 
-        write1 = (date, genre, artistpic, local, doors, price, starttime, artistweb, artist, venuelink, venuename, addressurl, venueaddress, description, readmore, musicurl, ticketurl)
-        write2 = (date, genre, artistpic, local, doors, price, starttime, artistweb, artist, venuelink, venuename, addressurl, venueaddress, description.encode('UTF-8'), readmore, musicurl, ticketurl)
+        write1 = (date, genre, artistpic, local, doors, price, starttime, newhtml, artist, venuelink, venuename, addressurl, venueaddress, description, readmore, musicurl, ticketurl)
+        write2 = (date, genre, artistpic, local, doors, price, starttime, newhtml, artist, venuelink, venuename, addressurl, venueaddress, description.encode('UTF-8'), readmore, musicurl, ticketurl)
         write3 = (date, genre, artistpic, local, doors, price, starttime, newhtml, artist.encode('UTF-8'), venuelink, venuename, addressurl, venueaddress, description.encode('UTF-8'), readmore, musicurl, ticketurl)
         
         try:  # Might crash with weird characters.

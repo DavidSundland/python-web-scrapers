@@ -57,11 +57,9 @@ for link in bsObj.findAll("a",href=re.compile("^(index\.cfm\?fuseaction\=home\.e
             price = 0
         else:
             price = re.findall("\$[0-9]+", datelong)[0]  #This extracts the ticket price
-        artistname = bsObj.find("h2", {"class":"artist-name"}).get_text() #This gets the artist's name
-        if len(re.findall('[A-Z]',artistname)) > 6 and len(re.findall('[A-Z]',artistname)) >= len(artistname)/2: #if CAPS are abused...
-            artist = scraperLibrary.titleCase(artistname)
-        else:
-            artist = artistname
+        artist = bsObj.find("h2", {"class":"artist-name"}).get_text() #This gets the artist's name
+        if len(re.findall('[A-Z]',artist)) > 6 and len(re.findall('[A-Z]',artist)) >= len(artist)/2: #if CAPS are abused...
+            artist = scraperLibrary.titleCase(artist)
         if scraperLibrary.compactWord(artist) in localList:
             local = "Yes"
         else:
@@ -101,9 +99,9 @@ for link in bsObj.findAll("a",href=re.compile("^(index\.cfm\?fuseaction\=home\.e
                     artistpic = "https://www.instantseats.com" + onepic.attrs["src"]
                     break
 
-        write1 = (date, genre, artistpic, local, doors, price, starttime, artistweb, artist, venuelink, venuename, addressurl, venueaddress, description, readmore, musicurl, ticketweb)
-        write2 = (date, genre, artistpic, local, doors, price, starttime, artistweb, artist, venuelink, venuename, addressurl, venueaddress, description.encode('UTF-8'), readmore, musicurl, ticketweb)
-        write3 = (date, genre, artistpic, local, doors, price, starttime, artistweb, artist.encode('UTF-8'), venuelink, venuename, addressurl, venueaddress, description.encode('UTF-8'), readmore, musicurl, ticketweb)
+        write1 = (date, genre, artistpic, local, doors, price, starttime, newhtml, artist, venuelink, venuename, addressurl, venueaddress, description, readmore, musicurl, ticketweb)
+        write2 = (date, genre, artistpic, local, doors, price, starttime, newhtml, artist, venuelink, venuename, addressurl, venueaddress, description.encode('UTF-8'), readmore, musicurl, ticketweb)
+        write3 = (date, genre, artistpic, local, doors, price, starttime, newhtml, artist.encode('UTF-8'), venuelink, venuename, addressurl, venueaddress, description.encode('UTF-8'), readmore, musicurl, ticketweb)
         try:  # Might crash with weird characters.
             writer.writerow(write1)
             backupwriter.writerow(write1)

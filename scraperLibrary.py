@@ -8,7 +8,7 @@ import datetime
 # usedLinksFile - name of file to which previously scraped events were noted
 # dateFormat - format of date which venue uses
 # numDays - minimum date for which previous scrapes NOT be retained
-# linkCheckUrl - URL to which event links should be appended to ensure that previously scraped future events did not become invalid.  "" should be provided if event links do not need to be prepended; False should be provided if previously scraped events do not need to be verified
+# linkCheckUrl - URL to which event links should be appended to ensure that previously scraped future events did not become invalid.  "" should be provided if event links do not need to be prepended; True should be provided if verification can be skipped
 ## RETURNS:
 # today - today's date as a datetime object
 # pages - previously used links; will be supplemented with links checked in current scrape

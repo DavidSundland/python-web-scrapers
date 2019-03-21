@@ -150,9 +150,9 @@ for link in eventObj.findAll("a",href=re.compile("^(\/shows\/)")): #The link to 
 
         [description, readmore] = scraperLibrary.descriptionTrim(description, ["ON SALE NOW!","LiveNation and Songbyrd Present ","Songbyrd Presents ","Songbyrd Vinyl Lounge "], 800, artistweb, newhtml)
 
-        write1 = (date, genre, artistpic, local, doors, price, starttime, artistweb, artist, venuelink, venuename, addressurl, venueaddress, description, readmore, musicurl, ticketweb)
-        write2 = (date, genre, artistpic, local, doors, price, starttime, artistweb, artist, venuelink, venuename, addressurl, venueaddress, description.encode('UTF-8'), readmore, musicurl, ticketweb)
-        write3 = (date, genre, artistpic, local, doors, price, starttime, artistweb, artist.encode('UTF-8'), venuelink, venuename, addressurl, venueaddress, description.encode('UTF-8'), readmore, musicurl, ticketweb)
+        write1 = (date, genre, artistpic, local, doors, price, starttime, newhtml, artist, venuelink, venuename, addressurl, venueaddress, description, readmore, musicurl, ticketweb)
+        write2 = (date, genre, artistpic, local, doors, price, starttime, newhtml, artist, venuelink, venuename, addressurl, venueaddress, description.encode('UTF-8'), readmore, musicurl, ticketweb)
+        write3 = (date, genre, artistpic, local, doors, price, starttime, newhtml, artist.encode('UTF-8'), venuelink, venuename, addressurl, venueaddress, description.encode('UTF-8'), readmore, musicurl, ticketweb)
         try:  # Might crash with weird characters.
             writer.writerow((write1))
             backupwriter.writerow((write1))
