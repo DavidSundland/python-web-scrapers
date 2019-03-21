@@ -1,5 +1,3 @@
-#Scrapes Blues Alley events, using - http://www.bluesalley.com/events.cfm  
-
 
 from urllib.request import urlopen #for pulling info from websites
 from bs4 import BeautifulSoup #for manipulating info pulled from websites

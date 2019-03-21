@@ -1,7 +1,3 @@
-#Scrapes Twins Jazz events, using their Instant Seats feed - http://www.instantseats.com/index.cfm?fuseaction=home.venue&venueid=10  
-# Previous headings:  "DATE", "TIME", "PRICE", "ARTIST", "DESCRIPTION", "READ MORE URL", "EVENT URL"
-# Previous variables:  dateonly, starttime, price, artist, description, readmore, newhtml
-# date becomes dateonly, NEED artistpic, artistweb becomes newhtml, NEED musicurl, ticketweb becomes newhtml
 
 from urllib.request import urlopen #for pulling info from websites
 from bs4 import BeautifulSoup #for manipulating info pulled from websites
@@ -9,41 +5,20 @@ import re #real expressions
 import csv #comma-separated values
 import datetime
 
-def compactWord(string):
-    return re.sub('[\s\-\_\/\.]','',string).lower()
+import scraperLibrary #custom library for venue site scraping
 
-pages = set() #create an empty set of pages
-pageanddate = set() #For list of used links WITH event date and date on which info was added to file
-today = datetime.date.today()
-yesno = ("y","Y","n","N")
-answer = ""
-while answer not in yesno:  
-    answer = input("Do you want to open used links file? (Skip previously-used links?) ")
-if answer == "y" or answer == "Y":
-    with open('../scraped/usedlinks-twins.csv', 'r') as previousscrape:  
-        reader = csv.reader(previousscrape)
-        previousinfo = list(reader)
-    for line in previousinfo:
-        try:
-            dadate = datetime.datetime.strptime(line[1].strip(), '%Y-%m-%d') #Newer dates in table are 2017-12-16 format.
-        except:
-            dadate = datetime.datetime.strptime((line[1].strip() + ' 2017'), '%B %d %Y') #Date in table is in month day format.  ADDED YEAR!!! (CHANGE BEFORE 2018)
-        if dadate.date() > today-datetime.timedelta(days=30):  #Get rid of old links
-            pageanddate.add((line[0],line[1],line[2]))  #Create list of links that have been checked before
-            pages.add(line[0])
-            testhtml = "https://www.instantseats.com/" + line[0]
-            try:
-                diditwork = urlopen(testhtml)
-            except:
-                print(testhtml,"caused an error...")
-    previousscrape.close()
 
-progresscounter = 0  #to keep track of progress while program running
+usedLinksFile = '../scraped/usedlinks-twins.csv'
+dateFormat = '%Y-%m-%d'
+numDays = 30
+linkCheckUrl = "https://www.instantseats.com/"
+
+[today, pages, pageanddate] = scraperLibrary.previousScrape(usedLinksFile, dateFormat, numDays, linkCheckUrl)
+
+
 UTFcounter = 0
 
-local = ""
-# locallist = ("Reginald Cyntje","The Twins Jazz Orchestra","Bobby Muncy","Tim Whalen","Jazz Band Master Class","Marty Nau","Danielle Wertz Feat. Mark Meadows","Danielle Wertz","Mark Meadows","Dial 251","Dial 251 for Jazz","Dial 251 For Jazz","Project Natale","Joe Vetter Quartet","Kenny Rittenhouse","Joe Vetter", "Abby Schaffer", "Rick Alberico", "Irene Jalenti", "Theo Rosenfeld", "Sarah Hughes", "Justin Lees","Jon Steele","Josh Irving","Encantada","Nicole Saphos Quartet","Pavel Urkiza","Jeff Antoniuk","Levon Mikaelian","United Shades Of Artistry","BSQ","Sarah Wilcox","Sotê","Gw Jazz","GW Jazz","Julian Berkowitz","Wade Beach","Griffith Kazmierczak","Ben Sher Quartet","Sam Lee","Radio Jazzhead Project","Bruce Williams","Hope Udobi","The 5-1-2 Experience","Dan Wallace","Matt Horanzy","Keith Butler Trio","Shannon Gunn","Herb Scott Quartet","Susan Jones Quartet","KW Big Band","Gopal, Gunn & Gleason","Samuel Prather & Groove Orchestra","Samuel Prather","This Is Merely an Ensemble","The Tritone Trio","The Voyage","Jeff Weintraub")
-genre = "Jazz & Blues"  # Add test for genre in future
+genre = "Jazz & Blues"  
 venuelink = "http://www.twinsjazz.com/"
 venuename = "Twins Jazz"
 addressurl = "https://goo.gl/maps/cs58EnKHujN2"
@@ -51,21 +26,11 @@ venueaddress = "1344 U St. NW, Washington, DC 20009"
 musicurl = ""
 doors = " "
 
-handle = open('local_musicians.txt','r') # opens running list of local musicians (file shared with Blues Alley)
-text = handle.read()
-# compactText = compactWord(text)
-locallist = compactWord(text).split(';')
-handle.close()
+localList = scraperLibrary.getLocalList()
 
-
-csvFile = open('../scraped/scraped-twins.csv', 'w', newline='') #The CSV file to which the scraped info will be copied.  NOTE - need to define the 'newline' as empty to avoid empty rows in spreadsheet
-writer = csv.writer(csvFile)
-writer.writerow(("DATE", "GENRE", "FEATURE?", "LOCAL?", "DOORS?", "PRICE", "TIME", "ARTIST WEBSITE", "ARTIST", "VENUE LINK", "VENUE NAME", "ADDRESS URL", "VENUE ADDRESS", "DESCRIPTION", "READ MORE URL", "MUSIC URL", "TICKET URL"))
-datetoday = str(datetime.date.today())
-backupfile = "../scraped/BackupFiles/TwinsScraped" + datetoday + ".csv"
-backupCSV = open(backupfile, 'w', newline = '') # A back-up file, just in case
-backupwriter = csv.writer(backupCSV)
-backupwriter.writerow(("DATE", "GENRE", "FEATURE?", "LOCAL?", "DOORS?", "PRICE", "TIME", "ARTIST WEBSITE", "ARTIST", "VENUE LINK", "VENUE NAME", "ADDRESS URL", "VENUE ADDRESS", "DESCRIPTION", "READ MORE URL", "MUSIC URL", "TICKET URL"))
+fileName = '../scraped/scraped-twins.csv'
+backupFileName = '../scraped/BackupFiles/TwinsScraped'
+[writer, backupwriter,datetoday,csvFile,backupCSV] = scraperLibrary.startCsvs(today,fileName,backupFileName)
 
 
 html = urlopen("http://www.instantseats.com/index.cfm?fuseaction=home.venue&venueid=10")
@@ -73,7 +38,6 @@ bsObj = BeautifulSoup(html)
 for link in bsObj.findAll("a",href=re.compile("^(index\.cfm\?fuseaction\=home\.event)")): #The link to each unique event page begins with "index.cfm?fuseaction=home.event"
     newPage = link.attrs["href"] #extract the links
     if newPage not in pages: #A new link has been found
-        #progresscounter += 1
         newhtml = "https://www.instantseats.com/" + newPage
         print(newhtml)
         html = urlopen(newhtml)
@@ -176,7 +140,6 @@ for link in bsObj.findAll("a",href=re.compile("^(index\.cfm\?fuseaction\=home\.e
                 print("Using UTF encoding for artist and description", dadate)
         pages.add(newPage)
         pageanddate.add((newPage,dadate,datetoday))  # Add link to list, paired with event date and today's date
-        #print(progresscounter)
 csvFile.close()
 backupCSV.close()
 
