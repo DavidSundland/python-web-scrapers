@@ -140,6 +140,20 @@ def getLocalList():
     handle.close()
     return localList
 
+
+def titleCase(string):
+    words = string.strip().split() 
+    returnString = ""
+    firstWord = True
+    for word in words:
+        if not firstWord and word.lower() in ("the", "a", "an", "of", "and", "but", "or", "for", "nor", "to", "on", "at", "from"):
+            returnString += word.lower() + " "
+            firstWord = False
+        else:
+            returnString += word.capitalize() + " "
+            firstWord = False
+    return returnString.strip()
+
 def saveLinks(datetoday,fileName,backupFileName,pageanddate):
     yesno = ("yes","y","no","n")
     answer = ""
