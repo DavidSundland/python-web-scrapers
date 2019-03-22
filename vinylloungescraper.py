@@ -72,7 +72,7 @@ for link in bsObj.findAll("a",href=re.compile("^(\/event\/)")): #The link to eac
         except:
             description = ""
 
-        [description, readmore] = scraperLibrary.descriptionTrim(description, [], 700, artistweb, newhtml) #U Street gets shorter descriptions
+        [description, readmore] = scraperLibrary.descriptionTrim(description, [], 800, artistweb, newhtml) #U Street gets shorter descriptions
 
         descriptionjammed = description.replace(" ","") # Create a string with no spaces
         descriptionJammed = description.replace(" ","") # Create a string with no spaces
@@ -100,6 +100,7 @@ for link in bsObj.findAll("a",href=re.compile("^(\/event\/)")): #The link to eac
                 break
         artistpic = re.sub('\?w\=[0-9]+\&h\=[0-9]+','',artistpic)
         
+        # some artists repeat, but Gypsy doesn't bother providing bios
         if "hergenreder" in artist.lower():
             description = "Hi, I am a song writer in the band Color School. Freinds are urging me to continue playing acoustic, which does make sense. I started playing guitar on acoustic when my hot chic platonic girlfriends would teach me Neal Young songs. We would play on top of Sugar Loaf Mountain near Frederick MD, or at beach week. Guitar was always fireside stuff and we would stay up till the sunrise, partying and playing acoustic guitar. Guess I was doing something right as I got to open for peeps like Peter Case, David Bromberg, and The Radiators. As much as I love playing with Color School, I also relish the firesides, sunrises, and my sweet sweet Dom. Oh, Dominique is my acoustic guitar's name. She is much easier on the ears as far as pressure and volume goes."
             genre = "Americana"
