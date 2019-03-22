@@ -66,7 +66,7 @@ for monthrange in range(0,2):  # look at this month & next; possibly look farthe
                 musicurl = ""
             artistlong = bsObj.find("h1", {"class":"page-title"}).get_text().strip() #This gets the event name (including extra crap)
             artist = artistlong.split(" - ")[0].strip() # event name is 1st part of title, separated from date by " - "
-            dateonly = re.findall("[0-9]{1,2}\/[0-9]{1,2}\/[0-9]{1,2}",artistlong)[0]
+            date = re.findall("[0-9]{1,2}\/[0-9]{1,2}\/[0-9]{1,2}",artistlong)[0]
             localList = scraperLibrary.getLocalList()
             if scraperLibrary.compactWord(artist) in localList:
                 local = "Yes"
@@ -80,7 +80,7 @@ for monthrange in range(0,2):  # look at this month & next; possibly look farthe
                     artistweb = bsObj.find("li", {"class":"facebook"}).find("a").attrs["href"]
                 except:
                     artistweb = ""
-            pageanddate.add((newPage,dateonly,datetoday))  # Add link to list, paired with event date and today's date
+            pageanddate.add((newPage,date,datetoday))  # Add link to list, paired with event date and today's date
             longtime = bsObj.find("span", {"class":"event-date"}).get_text().strip()
             try:
                 starttime = re.findall("([0-9]{1,2}\:[0-6][0-9]\s*[aApP][mM])\s*[sS][tT][aA][rR][tT]",longtime)[0]
@@ -116,6 +116,9 @@ for monthrange in range(0,2):  # look at this month & next; possibly look farthe
                 else:
                     description += paragraph.get_text() + " "
 
+            if "must be 21 years of age" in description: # tasting events include this in description
+                continue
+                
             [description, readmore] = scraperLibrary.descriptionTrim(description, [], 800, artistweb, newhtml) #U Street gets shorter descriptions
             
             artistpic = bsObj.find("p", {"class":"product-image"}).find("img").attrs["src"]
