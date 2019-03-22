@@ -116,7 +116,7 @@ for monthrange in range(0,2):  # look at this month & next; possibly look farthe
                 else:
                     description += paragraph.get_text() + " "
 
-            if "must be 21 years of age" in description: # tasting events include this in description
+            if "must be 21 years of age" in description.lower(): # tasting events include this in description
                 continue
                 
             [description, readmore] = scraperLibrary.descriptionTrim(description, [], 800, artistweb, newhtml) #U Street gets shorter descriptions
