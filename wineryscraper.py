@@ -92,7 +92,7 @@ for monthrange in range(0,2):  # look at this month & next; possibly look farthe
                     continue
             prices = bsObj.findAll("span", {"class":"price"})
             if len(prices) == 0:
-                print("Found no price for above link, so skipping it.  Event name:", artist)
+                print("Found no price for above link, so skipping it.  Event name:", artist, "Event date:", date)
                 continue  # Events with no price are non-music events (always? almost always?)
             else:
                 maxprice=0
@@ -121,7 +121,15 @@ for monthrange in range(0,2):  # look at this month & next; possibly look farthe
                 
             [description, readmore] = scraperLibrary.descriptionTrim(description, [], 800, artistweb, newhtml) #U Street gets shorter descriptions
             
-            artistpic = bsObj.find("p", {"class":"product-image"}).find("img").attrs["src"]
+            try: #Winery started using thumbnails for primary photo; larger photo is only within a slideshow script
+                scripts = bsObj.findAll("script")
+                for script in scripts:
+                    if '"full"' in script.get_text():
+                        scriptText = script.get_text()
+                artistpic = re.findall('(?:\"full\"\:\")(https\:.+?\.png)',scriptText)[0] #Result includes escape characters; must ensure that links still consistently function
+            except:
+                artistpic = bsObj.find("p", {"class":"product-image"}).find("img").attrs["src"]
+
             ticketweb = newhtml
             write1 = (date, genre, artistpic, local, doors, price, starttime, newhtml, artist, venuelink, venuename, addressurl, venueaddress, description, readmore, musicurl, ticketweb)
             write2 = (date, genre, artistpic, local, doors, price, starttime, newhtml, artist, venuelink, venuename, addressurl, venueaddress, description.encode('UTF-8'), readmore, musicurl, ticketweb)
