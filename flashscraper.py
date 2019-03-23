@@ -79,7 +79,7 @@ for link in bsObj.findAll("a",href=re.compile("^(pages\/details)")): #The link t
         artist = artist.replace("[in the Green Room]","")
         artist = re.sub('[\[\(][oO]pen[\s\-]to[\s\-][cC]lose[\s\-]*[sS]*e*t*\]','',artist)
         artist = re.sub('\[[lL][iI][vV][eE]\]','',artist)
-        artistweb = newhtml  # In case the try/except below fails
+        artistweb = ""
         musicurl = ""
         gotartistlink = False
         gotmusicurl = False
@@ -110,7 +110,7 @@ for link in bsObj.findAll("a",href=re.compile("^(pages\/details)")): #The link t
                 if gotartistlink == True and gotmusicurl == True:
                     break
         except:
-            whatnot = "heynow"
+            artistweb = ""
         description = ""
         for onepara in bsObj.findAll("p"):
             try:

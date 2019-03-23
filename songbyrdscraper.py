@@ -62,7 +62,7 @@ for link in eventObj.findAll("a",href=re.compile("^(\/shows\/)")): #The link to 
             continue # if date not in URL, not for a live music event
     if newPage not in pages: #A new link has been found
         newhtml = "http://www.songbyrddc.com" + newPage
-        artistweb = newhtml
+        artistweb = ""
         eventhtml = urlopen(newhtml)
         bsObj = BeautifulSoup(eventhtml)
         print(newhtml)

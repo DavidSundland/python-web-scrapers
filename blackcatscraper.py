@@ -127,7 +127,7 @@ for link in bsObj.findAll("a",href=re.compile("^(http\:\/\/www\.blackcatdc\.com\
         try:
             artistweb = bsObj.find("h1", {"class":"headline"}).find("a").attrs["href"]  #THIS finds the first instance of an h1 with a class of "headline", then digs deeper, finding the first instance w/in that li of a child a, and pulls the href.  BUT - since some artists may not have link, using try/except
         except:
-            artistweb = newhtml
+            artistweb = ""
         try: # There isn't always a description...
             description = bsObj.find("p", {"id":"bio"}).get_text()
         except:
@@ -152,11 +152,10 @@ for link in bsObj.findAll("a",href=re.compile("^(http\:\/\/www\.blackcatdc\.com\
             ticketweb = bsObj.find("a", href=re.compile("^(https\:\/\/www\.ticketfly\.com)")).attrs["href"]  #Ticket link - hopefully first Ticketfly link is for THIS event
         except:
             ticketweb = ""
-        artistpic = ""
         try:   
             artistpic = "http://www.blackcatdc.com" + bsObj.find("div", {"class":"band-photo-big"}).find("img").attrs["src"]
         except:
-            generalchitchat = "man, did you see that?"
+            artistpic = ""
         try:  # Might crash with weird characters.
             writer.writerow((date, genre, artistpic, local, doors, price, starttime, newhtml, artist, venuelink, venuename, addressurl, venueaddress, description, readmore, musicurl, ticketweb))
             backupwriter.writerow((date, genre, artistpic, local, doors, price, starttime, newhtml, artist, venuelink, venuename, addressurl, venueaddress, description, readmore, musicurl, ticketweb))

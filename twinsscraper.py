@@ -39,7 +39,7 @@ for link in bsObj.findAll("a",href=re.compile("^(index\.cfm\?fuseaction\=home\.e
     newPage = link.attrs["href"] #extract the links
     if newPage not in pages: #A new link has been found
         newhtml = "https://www.instantseats.com/" + newPage
-        artistweb = newhtml # artist website almost never listed
+        artistweb = "" # artist website almost never listed
         ticketweb = newhtml # event page is best ticket page
         print(newhtml)
         html = urlopen(newhtml)

@@ -95,7 +95,7 @@ for link in bsObj.findAll("a",href=re.compile("^(\/event\/)")): #The link to eac
             try:
                 artistweb = bsObj.find("li", {"class":"facebook"}).find("a").attrs["href"]
             except:
-                artistweb = newhtml
+                artistweb = ""
         try:
             description = bsObj.find("div", {"class":"bio"}).get_text().strip()
         except:

@@ -95,7 +95,7 @@ for link in bsObj.findAll("a",href=re.compile("^(\/event\/)")): #The link to eac
         try:
             artistweb = bsObj.find("li", {"class":"web"}).find("a").attrs["href"]  #THIS finds the first instance of a li with a class of "web", then digs deeper, finding the first instance w/in that li of a child a, and pulls the href.  BUT - since some artists may not have link, using try/except
         except:
-            artistweb = newhtml
+            artistweb = ""
         try: # There isn't always a description...
             description = bsObj.find("div", {"class":"bio"}).get_text() # Get the description, which does include a lot of breaks - will it be a mess?
         except:

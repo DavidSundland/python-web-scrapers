@@ -88,7 +88,7 @@ for link in bsObj.findAll("a",href=re.compile("^(http\:\/\/www\.rockandrollhotel
         try:
             artistweb = bsObj.find("div", {"class":"music_links"}).find("a").attrs["href"]  #THIS finds the first instance of a div with a class of "music_links", then digs deeper, finding the first instance w/in that div of a child a, and pulls the href.  BUT - since some artists may not have link, using try/except
         except:
-            artistweb = newhtml
+            artistweb = ""
         try: # There isn't always a description...
             description = bsObj.find("div", {"class":"artist_content"}).get_text().strip() # Get the description.
         except:

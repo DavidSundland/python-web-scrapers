@@ -82,24 +82,20 @@ def descriptionTrim(description, deleteItems, numChars, artistWeb, newHtml):
     splitChars = ["#$",". ","! ","? ",".' ",'." '] # sentence ends not always defined by a period; use of a lot of exclamation points or quotations can cause extra-long description...
     pointer = 1
     while len(description) > numChars and pointer <= 5: # If the description is too long...
-        [description, readmore] = descriptionSplit(description, splitChars[pointer-1], splitChars[pointer], numChars, artistWeb)
+        description = descriptionSplit(description, splitChars[pointer-1], splitChars[pointer], numChars)
         pointer += 1
-    if pointer > 1 and artistWeb != newHtml:  #If description is short but we found an artist link
-        readmore = artistWeb #Have the readmore link provide more info about the artist
-    elif pointer > 1:
-        readmore = newHtml
-    else:
-        readmore = "" #No artist link and short description - no need for readmore
+    readmore = artistWeb
+    if pointer > 1 and readmore == "":  
+        readmore = newHtml #Description shortened and no artist web found; offer link to event for more info
     return [description, readmore]
 
-def descriptionSplit(description, stripChar, splitChar, numChars, artistWeb):
+def descriptionSplit(description, stripChar, splitChar, numChars):
     descriptionsentences = description.split(splitChar) #Let's split it into sentences!
     description = ""
     for sentence in descriptionsentences:  #Let's rebuild, sentence-by-sentence!
         description += sentence + splitChar
         if (len(description) > numChars-100):  #Once we get close to max, dat's da last sentence
             break
-    readmore = artistWeb #We had to cut it short, so you can read more at the event or artist page
     checkChars = stripChar.strip() + splitChar.strip()
     if description.strip().endswith(checkChars):
         description = description.strip().strip(checkChars) + splitChar

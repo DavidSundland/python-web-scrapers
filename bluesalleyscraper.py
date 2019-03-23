@@ -57,7 +57,7 @@ for link in bsObj.findAll("a",href=re.compile(".+home\.event.+")): #The link to 
         newhtml = newPage # An extra line of code; used 'cuz in some cases a site's base URL needs to be added to the internal link
         html = urlopen(newhtml)
         bsObj = BeautifulSoup(html)
-        artistweb = newhtml
+        artistweb = ""
         musicurl = ""
         artist = bsObj.find("h1", {"class":"event-title"}).get_text() #This gets the event name (including extra description in some cases)
         if scraperLibrary.compactWord(artist) in localList:
@@ -74,7 +74,7 @@ for link in bsObj.findAll("a",href=re.compile(".+home\.event.+")): #The link to 
                     try:
                         isvalidlink = urlopen(artistweb) #test to make sure that link isn't broken
                     except:
-                        artistweb = newhtml
+                        artistweb = ""
                     try:
                         secondlink = onep.findAll("a")[1].attrs["href"]
                         if "youtube" in secondlink:

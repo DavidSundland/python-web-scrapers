@@ -110,7 +110,7 @@ for link in firstBS.findAll("a",href=re.compile("^(\/event\/)")): #The link to e
         try:
             artistweb = bsObj.find("li", {"class":"web"}).find("a").attrs["href"]  #THIS finds the first instance of a li with a class of "web", then digs deeper, finding the first instance w/in that li of a child a, and pulls the href.  BUT - since some artists may not have link, using try/except
         except:
-            artistweb = newhtml
+            artistweb = ""
         description = artist.rstrip('.') + ". " # Start description with artist name and period (first remove a period if it exists to avoid double periods)
         try:
             description += "With: " + bsObj.find("h2", {"class":"supports description"}).get_text() + ". " # Adds supporting artists (or additional title info)

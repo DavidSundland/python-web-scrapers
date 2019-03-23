@@ -53,13 +53,13 @@ for javascript in bsObj.findAll("script", {"type":"text/javascript"}):
     totalcode = re.findall("(http\:\\\/\\\/thehowardtheatre\.com\\\/show\\\/[0-9]{4}\\\/[0-9]{2}\\\/[0-9]{2}\\\/[0-9a-zA-Z-]+\\\/)", javascript.get_text()) # Links are provided in format for Jquery, so need to remove the backslashes - an example of an original: "http:\/\/thehowardtheatre.com\/show\/2017\/02\/24\/cameo-2\/"
     for onefound in totalcode:
         if (onefound != ""): # Some list elements will be empty - skip those
-            onepage = onefound.replace("\\", "") # Get rid of the backslashes
-            if onepage not in pages: #A new link has been found
+            newhtml = onefound.replace("\\", "") # Get rid of the backslashes
+            if newhtml not in pages: #A new link has been found
                 try:
-                    newhtml = urlopen(onepage)
-                    eventObj = BeautifulSoup(newhtml)
+                    html = urlopen(newhtml)
+                    eventObj = BeautifulSoup(html)
                 except:
-                    print("Skipped:",onepage)
+                    print("Skipped:",newhtml)
                     continue
                 artist = eventObj.find("p", {"class":"show-primary-info-title"}).get_text() # Event / top artist name
                 if artist == "Henny & Waffles":
@@ -68,8 +68,8 @@ for javascript in bsObj.findAll("script", {"type":"text/javascript"}):
                 dadate = datetime.datetime.strptime((eventdate.strip()), '%A, %B %d, %Y') #Date in table is in day month day, year format.
                 if dadate.date() > today+datetime.timedelta(days=61):  #If event is more than 2 months away, skip it for now (a lot can happen in 2 months):
                     continue
-                pageanddate.add((onepage,eventdate,datetoday))  # Add link to list, paired with event date and today's date
-                pages.add(onepage) #Add link to list so redundant links are not checked
+                pageanddate.add((newhtml,eventdate,datetoday))  # Add link to list, paired with event date and today's date
+                pages.add(newhtml) #Add link to list so redundant links are not checked
                 time = eventObj.find("p", {"class":"show-primary-info-showtime"}).get_text() # Pulls time, including "Showtime @ "
                 starttime = re.findall("([0-9]+:[0-9]{2}\s*[apAP][mM])", time)[0] #This extracts the time, including am/pm
                 price = eventObj.find("p", {"class":"show-primary-info-tickets"}).get_text() # Pulls the price, which could be a price range, AND DOES INCLUDE "Tickets"
@@ -81,10 +81,10 @@ for javascript in bsObj.findAll("script", {"type":"text/javascript"}):
                     try: #test the link to see if it works
                         doesitwork = urlopen(artistweb)
                     except:
-                        artistweb = onepage
+                        artistweb = ""
                         print("Encountered broken artist link for",eventdate)
                 except:
-                    artistweb = onepage
+                    artistweb = ""
                 description = ""
                 try:  #bio is in a weird location...
                     biosiblings = eventObj.find("p", {"class":"show-artist-bio"}).find_next_siblings() # .find_next_siblings("p", limit=3)
@@ -102,25 +102,25 @@ for javascript in bsObj.findAll("script", {"type":"text/javascript"}):
                     ticketweb = eventObj.findAll("p", {"class":"show-primary-info-tickets"})[1].find("a").attrs["href"] # Get the ticket sales URL; in a try/except in case tickets only at door and because ticket sales don't have unique identifier
                 except:
                     print("Couldn't find ticket sales link for", eventdate)
-                    ticketweb = onepage
+                    ticketweb = newhtml
                 try:
                     artistpic = "http://thehowardtheatre.com" + eventObj.find("p", {"class":"show-artist-img"}).find("img").attrs["src"]
                 except:
                     artistpic = ""
                 try:  # Might crash with weird characters.
-                    writer.writerow((eventdate, genre, artistpic, local, doors, price, starttime, onepage, artist, venuelink, venuename, addressurl, venueaddress, description, readmore, musicurl, ticketweb))
-                    backupwriter.writerow((eventdate, genre, artistpic, local, doors, price, starttime, onepage, artist, venuelink, venuename, addressurl, venueaddress, description, readmore, musicurl, ticketweb))
+                    writer.writerow((eventdate, genre, artistpic, local, doors, price, starttime, newhtml, artist, venuelink, venuename, addressurl, venueaddress, description, readmore, musicurl, ticketweb))
+                    backupwriter.writerow((eventdate, genre, artistpic, local, doors, price, starttime, newhtml, artist, venuelink, venuename, addressurl, venueaddress, description, readmore, musicurl, ticketweb))
                 except:
                     UTFcounter += 1
                     try:
-                        writer.writerow((eventdate, genre, artistpic, local, doors, price, starttime, onepage, artist, venuelink, venuename, addressurl, venueaddress, description.encode('UTF-8'), readmore, musicurl, ticketweb))
-                        backupwriter.writerow((eventdate, genre, artistpic, local, doors, price, starttime, onepage, artist, venuelink, venuename, addressurl, venueaddress, description.encode('UTF-8'), readmore, musicurl, ticketweb))
+                        writer.writerow((eventdate, genre, artistpic, local, doors, price, starttime, newhtml, artist, venuelink, venuename, addressurl, venueaddress, description.encode('UTF-8'), readmore, musicurl, ticketweb))
+                        backupwriter.writerow((eventdate, genre, artistpic, local, doors, price, starttime, newhtml, artist, venuelink, venuename, addressurl, venueaddress, description.encode('UTF-8'), readmore, musicurl, ticketweb))
                         print("Using UTF encoding for description", eventdate)
                     except:
-                        writer.writerow((eventdate, genre, artistpic, local, doors, price, starttime, onepage, artist.encode('UTF-8'), venuelink, venuename, addressurl, venueaddress, description.encode('UTF-8'), readmore, musicurl, ticketweb))
-                        backupwriter.writerow((eventdate, genre, artistpic, local, doors, price, starttime, onepage, artist.encode('UTF-8'), venuelink, venuename, addressurl, venueaddress, description.encode('UTF-8'), readmore, musicurl, ticketweb))
+                        writer.writerow((eventdate, genre, artistpic, local, doors, price, starttime, newhtml, artist.encode('UTF-8'), venuelink, venuename, addressurl, venueaddress, description.encode('UTF-8'), readmore, musicurl, ticketweb))
+                        backupwriter.writerow((eventdate, genre, artistpic, local, doors, price, starttime, newhtml, artist.encode('UTF-8'), venuelink, venuename, addressurl, venueaddress, description.encode('UTF-8'), readmore, musicurl, ticketweb))
                         print("Using UTF encoding for artist and description", eventdate)
-                print(onepage,eventdate)
+                print(newhtml,eventdate)
 csvFile.close()
 backupCVS.close()
 
