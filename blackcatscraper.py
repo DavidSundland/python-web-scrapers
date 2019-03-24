@@ -84,6 +84,8 @@ for link in bsObj.findAll("a",href=re.compile("^(http\:\/\/www\.blackcatdc\.com\
         for word in byebyecaps:
             artist += word.capitalize() + " "
         artist = artist.replace("Dc","DC")
+        if "story district" in artist.lower():
+            continue
         year = today.year
         dadate = bsObj.find("h2", {"class":"date"}).get_text() # This includes the day of the week.  The spreadsheet doesn't care.
         try:

@@ -99,7 +99,7 @@ def descriptionSplit(description, stripChar, splitChar, numChars):
     checkChars = stripChar.strip() + splitChar.strip()
     if description.strip().endswith(checkChars):
         description = description.strip().strip(checkChars) + splitChar
-    return [description.strip(), readmore]
+    return description.strip()
 
 def killCapAbuse(description):
     if description[-1] == "'" or description[-1] == '"':
@@ -148,6 +148,8 @@ def titleCase(string):
         else:
             returnString += word.capitalize() + " "
             firstWord = False
+    returnString = returnString.replace("Dc","DC")
+    returnString = returnString.replace("\(dc","\(DC")
     return returnString.strip()
 
 def saveLinks(datetoday,fileName,backupFileName,pageanddate):

@@ -70,9 +70,13 @@ for link in bsObj.findAll("a",href=re.compile("^(\/event\/)")): #The link to eac
         except:
             price = "Free!"  # In the first instance in which price-range failed, event was free...
             print("Verify that ", newhtml, " is indeed free!!!!!!!")
+        if "sold out" in price.lower():
+            continue
+        if "rsvp" in price.lower() and len(re.findall([0-9],price)) == 0:
+            price = "Free!"
         artist = bsObj.find("h1", {"class":"headliners"}).get_text().strip() # Event name
 
-        skippers = ["sold out","mixtape","peach pit","karaoke","liberation dance party","astronomy on tap","nerd nite","90s tracks","wig & disco","daft lunch","dark & stormy"]
+        skippers = ["sold out","mixtape","peach pit","karaoke","liberation dance party","astronomy on tap","nerd nite","90s tracks","wig & disco","daft lunch","dark & stormy","show moving to","closed for private event"]
         skip = False
         for skipper in skippers:
             if skipper in artist.lower():
@@ -84,11 +88,7 @@ for link in bsObj.findAll("a",href=re.compile("^(\/event\/)")): #The link to eac
         artist = re.sub('\s\[\s*[eE][aA][rR][lL][yY]\s+[eE][vV][eE][nN][tT]\s*\]','',artist)
         artist = re.sub('\s\[\s*[lL][aA][tT][eE]\s+[eE][vV][eE][nN][tT]\s*\]','',artist)
         if len(re.findall("[A-Z]", artist)) > 8 and len(re.findall("[a-z]", artist)) < 4: # if caps are abused...
-            words = artist.split(' ')
-            artist = ""
-            for word in words:
-                artist += word.capitalize() + ' '
-            artist = artist.strip()
+            artist = scraperLibrary.titleCase(artist)
         try:
             artistweb = bsObj.find("li", {"class":"web"}).find("a").attrs["href"]  #THIS finds the first instance of a li with a class of "web", then digs deeper, finding the first instance w/in that li of a child a, and pulls the href.  BUT - since some artists may not have link, using try/except
         except:
@@ -99,8 +99,10 @@ for link in bsObj.findAll("a",href=re.compile("^(\/event\/)")): #The link to eac
         try:
             description = bsObj.find("div", {"class":"bio"}).get_text().strip()
         except:
+            description = ""
             print("Found no description")
         description = description.replace("  / ","").strip("/").strip().strip("/").strip()
+        description = re.sub('((Tickets\s)|(TICKETS\s))([gG][oO]\s)*((on[\s\-]sale\s)|(ON[\s\-]SALE\s))[A-Za-z]+\,*\s([0-9\/\-]{3,5}|([a-zA-Z]+)\s[0-9]{1,2})\s(\@|[aA][tT])\s(([0-9]{1,2}[aA][mM])|([nN][oO][oO][nN]))','',description)
         [description, readmore] = scraperLibrary.descriptionTrim(description, ["OFFICIAL WEBSITE","TWITTER","FACEBOOK"], 800, artistweb, newhtml)
         try:
             musicurl = bsObj.find("li", {"class":"soundcloud"}).find("a").attrs["href"]

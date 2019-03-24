@@ -127,6 +127,11 @@ for link in firstBS.findAll("a",href=re.compile("^(\/event\/)")): #The link to e
 #            description = ""
 
         [description, readmore] = scraperLibrary.descriptionTrim(description, [], 800, artistweb, newhtml)
+
+        descriptionJammed = description.replace(" ","") # Create a string with no spaces
+        if len(re.findall("[A-Z]{15,}", descriptionJammed)) > 0:
+            scraperLibrary.killCapAbuse(description)
+
         try:
             ticketweb = bsObj.find("a", {"class":"tickets"}).attrs["href"] # Get the ticket sales URL; in a try/except in case tickets only at door
         except:

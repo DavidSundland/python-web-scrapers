@@ -77,7 +77,7 @@ for link in bsObj.findAll("a",href=re.compile("^(pages\/details)")): #The link t
         if "[OFF]" in artist or "[Off]" in artist or "(Off)" in artist or "(OFF)" in artist:
             continue
         artist = artist.replace("[in the Green Room]","")
-        artist = re.sub('[\[\(][oO]pen[\s\-]to[\s\-][cC]lose[\s\-]*[sS]*e*t*\]','',artist)
+        artist = re.sub('[\{\[\(][oO]pen[\s\-](2|to)[\s\-][cC]lose[\s\-]*[sS]*e*t*[\}\]\)]','',artist) {Open-2-Close}
         artist = re.sub('\[[lL][iI][vV][eE]\]','',artist)
         artistweb = ""
         musicurl = ""
