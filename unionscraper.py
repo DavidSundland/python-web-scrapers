@@ -74,7 +74,10 @@ for link in bsObj.findAll("a",href=re.compile("^(\/event\/)")): #The link to eac
             except:
                 description = ""
 
-        [description, readmore] = scraperLibrary.descriptionTrim(description, ['PLEASE NOTE: The charge on your credit card will show up as "JAMMIN JAVA".PLEASE NOTE: This show is held at The Miracle Theatre, 535 8th St SE, Washington, DC, 20003'], 800, artistweb, newhtml)
+        if "will be held at Songbyrd" in description:
+            continue
+        description = re.sub('(PLEASE\sNOTE|Please\sNote)\:\s*The\scharge\son\syour\scredit\scard\swill\sshow\sup\sas\s\"(JAMMIN\sJAVA|Jammin\sJava)\"\.\s*(PLEASE\sNOTE|Please\sNote)\:\s*This\sshow\sis\sheld\sat\sThe\sMiracle\sTheatre\,\s535\s8th\sSt\sSE\,\s(Washington,\sDC)*\,*(\s20003)*','',description)
+        [description, readmore] = scraperLibrary.descriptionTrim(description, [], 800, artistweb, newhtml)
 
         descriptionJammed = description.replace(" ","") # Create a string with no spaces
         if len(re.findall("[A-Z]{15,}", descriptionJammed)) > 0:
