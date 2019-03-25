@@ -28,7 +28,6 @@ if answer == "y" or answer == "Y":
 
 UTFcounter = 0
 
-local = "" 
 genre = "Rock & Pop"
 venuelink = "http://www.songbyrddc.com/"
 venuename = "Songbyrd Cafe"
@@ -71,10 +70,12 @@ for link in eventObj.findAll("a",href=re.compile("^(\/shows\/)")): #The link to 
             continue
         price = price.replace("BUY TICKETS","")
         price = re.sub('(Facebook\s)*(Free\s)*(FREE\s)*RSVP\!*','',price)
+        price = re.sub('[Oo][Nn]\s[Ss][Aa][Ll][Ee]\s[0-9]{1,2}[\/\-][0-9]{1,2}\!*','',price)
         price = price.strip()
         artistlong = bsObj.find("title").get_text().strip()
         artist = re.findall("(.+)\s+\@",artistlong)[0].title()
-        skipArtists = ["punkhouse comedy","listening party","music trivia","karaoke.sexy","watch party","diary of an r&b","classic album sundays","@ dangerous","@ milkboy","@ union","@ fillmore","cancelled"]
+        artist = re.sub('\s+\-*\s*(Late|LATE)\s(Show|SHOW)','',artist)
+        skipArtists = ["punkhouse comedy","listening party","music trivia","karaoke.sexy","watch party","diary of an r&b","classic album sundays","@ dangerous","@ milkboy","@ union","@ fillmore","cancelled","record store day","rhythm & foods","vinyasa","health's angels","wyvwm"]
         skip = False
         for skipArtist in skipArtists:
             if skipArtist in artist.lower():
@@ -83,6 +84,11 @@ for link in eventObj.findAll("a",href=re.compile("^(\/shows\/)")): #The link to 
         if skip:
             continue
         artist = artist.replace("Project Hera Presents: ","")
+        localList = scraperLibrary.getLocalList()
+        if scraperLibrary.compactWord(artist) in localList:
+            local = "Yes"
+        else:
+            local = ""
         date = bsObj.find("span", {"class":"eventDate"}).attrs["v"]
         ticketweb = bsObj.find("a",{"class":"eventbtn"}).attrs["href"]
         dadate = datetime.datetime.strptime(date, '%d-%b-%Y')  #date is in "01-Jul-2018" format
@@ -132,7 +138,7 @@ for link in eventObj.findAll("a",href=re.compile("^(\/shows\/)")): #The link to 
                     continue
                 if thetext.lower().startswith("free") and len(thetext) < 50:
                     continue
-                if thetext.lower().startswith("on sale") and len(thetext) < 30:
+                if thetext.lower().startswith("on sale") and len(thetext) < 30: 
                     continue
                 if re.search("^[SMTWF][UOEHRAuoehra][A-Za-z]+\,*\s+[JFMASOND][AEPUCOaepuco][a-zA-Z]+\s+[0-9]{1,2}",thetext):  #Skip day and date
                     continue
@@ -146,9 +152,10 @@ for link in eventObj.findAll("a",href=re.compile("^(\/shows\/)")): #The link to 
                     continue
                 description += thetext + " "
         description = description.strip()
+        description = re.sub('21\+\s[\/\-]*\s*\$[0-9]{,2}\s*(entry)*','',description)
         description = description.strip("--")  # If description now leads w/ this, bye-bye
 
-        [description, readmore] = scraperLibrary.descriptionTrim(description, ["ON SALE NOW!","LiveNation and Songbyrd Present ","Songbyrd Presents ","Songbyrd Vinyl Lounge "], 800, artistweb, newhtml)
+        [description, readmore] = scraperLibrary.descriptionTrim(description, ["ON SALE NOW!","LiveNation and Songbyrd Present","Songbyrd Presents","Songbyrd Vinyl Lounge","Songbyrd and Union Stage Present","Latin Fluff and Songbyrd Present","Songbyrd and LiveNation Present"], 800, artistweb, newhtml)
 
         write1 = (date, genre, artistpic, local, doors, price, starttime, newhtml, artist, venuelink, venuename, addressurl, venueaddress, description, readmore, musicurl, ticketweb)
         write2 = (date, genre, artistpic, local, doors, price, starttime, newhtml, artist, venuelink, venuename, addressurl, venueaddress, description.encode('UTF-8'), readmore, musicurl, ticketweb)
