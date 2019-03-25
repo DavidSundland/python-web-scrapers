@@ -105,8 +105,8 @@ for link in bsObj.findAll("a",href=re.compile("^(\/event\/)")): #The link to eac
             price = eventObj.find("h3", {"class":"price-range"}).get_text().strip() # Pulls the price, which could be a price range
         except: # No price range means that it's free (I hope)
             price = "Free!"
-        artist = eventObj.find("h1", {"class":"headliners summary"}).get_text()
-        if artist=="TBA":
+        artist = eventObj.find("h1", {"class":"headliners summary"}).get_text().strip()
+        if artist.upper()=="TBA":
             continue
         artist = re.sub('(Free\s)*(Late\sNight\s)(Music\s)*in\s[tT]he\sLoft\s[wW]ith\s','',artist)
         artist = artist.replace(" (Night One)","").replace(" (Night Two)","")
@@ -131,23 +131,6 @@ for link in bsObj.findAll("a",href=re.compile("^(\/event\/)")): #The link to eac
                 description += " NOTE: Show is in loft bar of restaurant."
         except:
             notathing = "Let's toss something in to satisfy the need for an 'except' with a 'try.'"
-        if "Fast Eddie" in artist and len(description) < 100: #Fast Eddie plays Hamilton a lot but never has a description
-            description = "Serving up a menu of award-winning blues, soul, and rock’n’roll, Fast Eddie & The Slowpokes are fresh off their semi-final finish at the 2017 International Blues Challenge. Their mix of originals and covers stretches from West Coast swing to classic Chicago blues and Memphis soul. The band’s music will get you out of your seat and on your feet."
-            genre = "Jazz & Blues"
-        elif "Michael Scoglio" in artist and len(description) < 100: #Michael Scoglio plays Hamilton a lot but never has a description
-            description = "As the son of a Southern Baptist televangelist, I didn't hear my first rock album until the age of 16. I grew up listening to gospel artists and singing in the church. My first rock album forever changed the way I heard and played music. Since then I have worked to become a top notch player, songwriter, and singer.  I spend my time writing new songs and jamming with other musicians, including Dog City Hoedown, Mike's Swing Thing, and The Electric Peacock Dance Band."
-            genre = "Rock & Pop"
-            readmore = "https://www.mikescoglio.com/home"
-        elif "Mercy Creek" in artist and len(description) < 100: 
-            description = "Based in Virginia, Mercy Creek performs original music they call aggressive folk rock. Singer/guitarist Cheryl Nystrom and song writing partner/drummer Jim Ball combine elements of modern folk, world beat, rock, and hints of blues and bluegrass to create music that is fresh and unique. From world beat to folk, the musical styles used in Mercy Creek's songs are anchored by Nystrom's beautiful voice and intelligent lyrics.  Mercy Creek has released 7 independent albums and have been a full time performing act since 1998, playing across the country at clubs, festivals, and concerts."
-            genre = "Rock & Pop"
-            readmore = "http://www.mercycreek.com/"
-        elif ("alex and the red parez" in artist.lower() or "alex & the red parez" in artist.lower() or "alex the red parez" in artist.lower()) and len(description) <100:
-            description = "Alex The Red Parez aka El Rojo has been bringing acoustic rock and old-time country to the Washington DC Metro Area since 2006. Whether performing original music or classic material, Alex’s voice is “reminiscent of Johnny Cash, though often sung with Jello Biafra’s inflection” (Matthew Stabley, NBCWashington.com) and “sounds like Nick Cave reinterpreting the early songbook of Bill Callahan” (The Big Easy - MetroMusicScence.com). “El Rojo” to his friends, Parez takes inspiration from epic troubadours Johnny Cash, Bruce Springsteen, Tom Petty and local balladeer John Bustine amongst various other artists. In trio mode, Alex is flanked by accomplished harmonica sideman Terry Boes and prolific bassist Derek Evry who is also a fantastic songwriter, singer, guitarist and band leader. Alex has also performed with several other local musicians for various tribute shows."
-            genre = "Americana"
-            readmore = "https://www.alexparez.com/"
-        else:
-            genre = "Rock & Pop"
         try:
             ticketweb = eventObj.find("a", {"class":"tickets"}).attrs["href"] # Get the ticket sales URL; in a try/except in case tickets only at door
         except:
@@ -172,6 +155,26 @@ for link in bsObj.findAll("a",href=re.compile("^(\/event\/)")): #The link to eac
             artistpic = ""
         if "w=200&h=133" in artistpic:  #Get rid of "The Loft" pics
             artistpic = ""
+
+        if "Fast Eddie" in artist and len(description) < 100: #Fast Eddie plays Hamilton a lot but never has a description
+            description = "Serving up a menu of award-winning blues, soul, and rock’n’roll, Fast Eddie & The Slowpokes are fresh off their semi-final finish at the 2017 International Blues Challenge. Their mix of originals and covers stretches from West Coast swing to classic Chicago blues and Memphis soul. The band’s music will get you out of your seat and on your feet."
+            genre = "Jazz & Blues"
+        elif "Michael Scoglio" in artist and len(description) < 100: #Michael Scoglio plays Hamilton a lot but never has a description
+            description = "As the son of a Southern Baptist televangelist, I didn't hear my first rock album until the age of 16. I grew up listening to gospel artists and singing in the church. My first rock album forever changed the way I heard and played music. Since then I have worked to become a top notch player, songwriter, and singer.  I spend my time writing new songs and jamming with other musicians, including Dog City Hoedown, Mike's Swing Thing, and The Electric Peacock Dance Band."
+            readmore = "https://www.mikescoglio.com/home"
+        elif "Mercy Creek" in artist and len(description) < 100: 
+            description = "Based in Virginia, Mercy Creek performs original music they call aggressive folk rock. Singer/guitarist Cheryl Nystrom and song writing partner/drummer Jim Ball combine elements of modern folk, world beat, rock, and hints of blues and bluegrass to create music that is fresh and unique. From world beat to folk, the musical styles used in Mercy Creek's songs are anchored by Nystrom's beautiful voice and intelligent lyrics.  Mercy Creek has released 7 independent albums and have been a full time performing act since 1998, playing across the country at clubs, festivals, and concerts."
+            readmore = "http://www.mercycreek.com/"
+        elif ("alex and the red parez" in artist.lower() or "alex & the red parez" in artist.lower() or "alex the red parez" in artist.lower()) and len(description) <100:
+            description = "Alex The Red Parez aka El Rojo has been bringing acoustic rock and old-time country to the Washington DC Metro Area since 2006. Whether performing original music or classic material, Alex’s voice is “reminiscent of Johnny Cash, though often sung with Jello Biafra’s inflection” (Matthew Stabley, NBCWashington.com) and “sounds like Nick Cave reinterpreting the early songbook of Bill Callahan” (The Big Easy - MetroMusicScence.com). “El Rojo” to his friends, Parez takes inspiration from epic troubadours Johnny Cash, Bruce Springsteen, Tom Petty and local balladeer John Bustine amongst various other artists. In trio mode, Alex is flanked by accomplished harmonica sideman Terry Boes and prolific bassist Derek Evry who is also a fantastic songwriter, singer, guitarist and band leader. Alex has also performed with several other local musicians for various tribute shows."
+            genre = "Americana"
+            readmore = "https://www.alexparez.com/"
+        elif "wanted man" in artist.lower() and len(description) < 100:
+            description = "Wanted Man - Rock n Roll from our nation's capital, featuring: Kenny Pirog - Guitar, Vocals, Triangle; Rick Irby - Drums, Tambourine, Vocals; Anthony Pirog - Guitar; Scoops - Bass, Soul Brother; Johnny Fantastic - Bass, Vocal Harmonies.  Virginia Beach’s Bennett Wales & the Relief are living proof that raw talent, ambition & honesty can still prevail in an ailing music industry. The bands musical discoveries take flight with a compelling combination of rich pop layers & mixed stylings of rhythm & blues, rock & Americana. By melding hook-filled melody within groove-able rhythms, Bennett Wales & the Relief show their ability to compact a vast array of influence & experience into a singular & distinct sound.  Together the quintet provides a vast amount of influences & gift a broadened door of multiple genre stylings to music enthusiasts & listeners alike."
+            musicurl = "https://wantedman.bandcamp.com/"
+        else:
+            genre = "Rock & Pop"
+
         try:  # Might crash with weird characters.
             writer.writerow((date, genre, artistpic, local, doors, price, starttime, newhtml, artist, venuelink, venuename, addressurl, venueaddress, description, readmore, musicurl, ticketweb))
             backupwriter.writerow((date, genre, artistpic, local, doors, price, starttime, newhtml, artist, venuelink, venuename, addressurl, venueaddress, description, readmore, musicurl, ticketweb))

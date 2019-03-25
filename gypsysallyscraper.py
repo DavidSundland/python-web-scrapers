@@ -86,10 +86,13 @@ for link in bsObj.findAll("a",href=re.compile("^(\/event\/)")): #The link to eac
             price = bsObj.find("h3", {"class":"price-range"}).get_text().strip() # Pulls the price, which could be a price range
         except:  # Let's hope that it's free if it doesn't have an h3 w/ a class of "price-range"
             price = "Free!"
+        price = price.replace("DONATIONS AT THE DOOR","Donations at the Door")
         artist = bsObj.find("h1", {"class":"headliners summary"}).get_text() # Event / top artist name
         artist = artist.replace("VINYL LOUNGE OPEN MIC", "Vinyl Lounge Open Mic") # Eliminate annoying all-caps, if applicable
         artist = artist.replace(", VINYL LOUNGE", "") # Eliminate 'bonus' info about artist being @ Vinyl
         artist = artist.replace("Gordon Sterling Presents:", "")
+        if "gypsy sally's jam" in artist.lower():
+            genre = "Potpourri"
         if "closed" in artist.lower() in artist: # Skip closed private events
             continue
         try:

@@ -20,7 +20,6 @@ linkCheckUrl = ""
 
 UTFcounter = 0
 
-local = ""  # Add test for local in future
 doors = " "
 genre = "Rock & Pop"
 venuelink = "http://www.rockandrollhoteldc.com/"
@@ -127,6 +126,12 @@ for link in bsObj.findAll("a",href=re.compile("^(http\:\/\/www\.rockandrollhotel
                 artistpic = ""
         else:
             artistpic = ""
+
+        localList = scraperLibrary.getLocalList()
+        if scraperLibrary.compactWord(artist) in localList:
+            local = "Yes"
+        else:
+            local = ""
 
         write1 = (date, genre, artistpic, local, doors, price, starttime, newhtml, artist, venuelink, venuename, addressurl, venueaddress, description, readmore, musicurl, ticketurl)
         write2 = (date, genre, artistpic, local, doors, price, starttime, newhtml, artist, venuelink, venuename, addressurl, venueaddress, description.encode('UTF-8'), readmore, musicurl, ticketurl)

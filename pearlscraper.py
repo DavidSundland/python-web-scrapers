@@ -19,7 +19,6 @@ linkCheckUrl = "http://www.pearlstreetwarehouse.com"
 
 UTFcounter = 0
 
-local = ""  # Add test for local in future
 doors = " "
 genre = "Rock & Pop"  # Add test for genre in future
 venuelink = "http://www.pearlstreetwarehouse.com/"
@@ -64,6 +63,8 @@ for link in bsObj.findAll("a",href=re.compile("^(\/event\/)")): #The link to eac
             artist = bsObj.find("h1", {"class":"headliners"}).get_text().strip() # Event name
         if "private event" in artist.lower():
             continue
+        artist = re.sub('(Free|FREE)\s*(Show|SHOW)*\!*\s(with\s|feat\.*\s)*','',artist)
+        artist = artist.replace(' (solo)','')
         try:
             artistweb = bsObj.find("li", {"class":"web"}).find("a").attrs["href"]  #THIS finds the first instance of a div with a class of "music_links", then digs deeper, finding the first instance w/in that div of a child a, and pulls the href.  BUT - since some artists may not have link, using try/except
         except:
@@ -105,6 +106,15 @@ for link in bsObj.findAll("a",href=re.compile("^(\/event\/)")): #The link to eac
             artistpic = bsObj.find("div", {"class":"event-detail"}).find("img").attrs["src"]
         except:
             artistpic = ""
+        if "shiner honky tonk" in artist.lower():
+            artist = re.sub('Shiner\s[Hh]onky\sTonk\s([Nn]ight\s)*([Ww]ith\s)*','',artist)
+            genre = "Americana"
+        localList = scraperLibrary.getLocalList()
+        if scraperLibrary.compactWord(artist) in localList:
+            local = "Yes"
+        else:
+            local = ""
+
         write1 = (date, genre, artistpic, local, doors, price, starttime, newhtml, artist, venuelink, venuename, addressurl, venueaddress, description, readmore, musicurl, ticketurl)
         write2 = (date, genre, artistpic, local, doors, price, starttime, newhtml, artist, venuelink, venuename, addressurl, venueaddress, description.encode('UTF-8'), readmore, musicurl, ticketurl)
         write3 = (date, genre, artistpic, local, doors, price, starttime, newhtml, artist.encode('UTF-8'), venuelink, venuename, addressurl, venueaddress, description.encode('UTF-8'), readmore, musicurl, ticketurl)
