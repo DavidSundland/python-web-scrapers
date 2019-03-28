@@ -1,4 +1,4 @@
-#Scrapes City Winery events, using - https://citywinery.com/washingtondc/tickets.html?view=calendar&month=6&year=2018/  FOR SPREADSHEET, USE Scraping - Basic Sites
+#Scrapes Mr. Henry's events, using - http://www.mrhenrysdc.com/calendar/2019-04/ 
 
 
 

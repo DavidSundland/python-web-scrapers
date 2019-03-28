@@ -51,7 +51,7 @@ for link in bsObj.findAll("a",href=re.compile("^(\/event\/)")): #The link to eac
             artist = bsObj.find("span", {"class":"artist-name"}).get_text().strip() # Event name
         except:
             artist = bsObj.find("h1", {"class":"headliners"}).get_text().strip()
-        if "Private Event" in artist or "private-event" in newPage or "tap room open" in artist.lower() or "jokes on tap" in artist.lower():
+        if "Private Event" in artist or "private-event" in newPage or "tap room open" in artist.lower() or "jokes on tap" in artist.lower() or artist == "The Southwester":
             continue
         if scraperLibrary.compactWord(artist) in localList:
             local = "Yes"
