@@ -1,7 +1,6 @@
 #Scrapes Mr. Henry's events, using - http://www.mrhenrysdc.com/calendar/2019-04/ 
 
 
-
 from urllib.request import urlopen #for pulling info from websites
 from bs4 import BeautifulSoup #for manipulating info pulled from websites
 import re #regular expressions
@@ -11,23 +10,38 @@ from datetime import date # necessary for properly calculating time differences 
 from dateutil.relativedelta import relativedelta # necessary for properly calculating time differences in months
 
 import scraperLibrary #custom library for venue site scraping
+import scraperLibraryOOP # Object-Oriented versions of most scraperLibrary functions
 
+class Scraped: # move to scraperLibraryOOP when scraper completed and tested
+    def __init__(self, date, genre, artistpic, local, doors, price, starttime, newhtml, artist, venuelink, venuename, addressurl, venueaddress, description, readmore, musicurl, ticketweb, artisturl):
+        self.date = date
+        self.genre = genre
+        self.artistpic = artistpic
+        self.local = local
+        self.doors = doors
+        self.price = price
+        self.starttime = starttime
+        self.newhtml = newhtml
+        self.artist = artist
+        self.venuelink = venuelink
+        self.venuename = venuename
+        self.addressurl = addressurl
+        self.venueaddress = venueaddress
+        self.description = description
+        self.readmore = readmore
+        self.musicurl = musicurl
+        self.ticketweb = ticketweb
+        self.artisturl = artisturl
+        
+mrHenrys = Scraped("", "Jazz&Blues", "", "", " ", "", "", "", "", "http://www.mrhenrysdc.com/", "Mr. Henry's", "https://goo.gl/maps/D8WAijc1bi92", "601 Pennsylvania Ave. SE, Washington, DC 20007", "", "", "", "", "")
 
-usedLinksFile = '../scraped/usedlinks-winery.csv'
-dateFormat = '%m/%d/%y'
+usedLinksFile = '../scraped/usedlinks-mrhenry.csv'
+dateFormat = '%Y-%m-%d'
 numDays = 30
-linkCheckUrl = True
+linkCheckUrl = ''
 
 [today, pages, pageanddate] = scraperLibrary.previousScrape(usedLinksFile, dateFormat, numDays, linkCheckUrl)
-
-UTFcounter = 0 # Counter for number of encoding problems (thusfar not needed for Blues Alley)
-
-doors = " "
-genre = "Rock & Pop"
-venuelink = "https://citywinery.com/washingtondc/"
-venuename = "City Winery"
-addressurl = "https://goo.gl/maps/jhjUuxZ44sp"
-venueaddress = "1350 Okie St NE, Washington, DC 20002"
+UTFcounter = 0 # Counter for number of encoding problems
 
 fileName = '../scraped/scraped-winery.csv'
 backupFileName = '../scraped/BackupFiles/WineryScraped'
@@ -37,7 +51,9 @@ backupFileName = '../scraped/BackupFiles/WineryScraped'
 # Scraping 1 month at a time, creating URL to match: https://citywinery.com/washingtondc/tickets.html?view=calendar&month=6&year=2018
 for monthrange in range(0,2):  # look at this month & next; possibly look farther in future
     month = ((today+relativedelta(months=+monthrange)).strftime("%m")).lstrip("0")
-    monthurl = "https://citywinery.com/washingtondc/tickets.html?view=calendar&month="  + month + "&year=" + (today+relativedelta(months=+monthrange)).strftime("%Y")
+    monthurl = "http://www.mrhenrysdc.com/calendar/" + (today+relativedelta(months=+monthrange)).strftime("%Y") + "-" + month.zfill(2) + "/"
+    print(monthurl)
+    quit()
     html = urlopen(monthurl)
     bsObj = BeautifulSoup(html)
     for link in bsObj.findAll("a",href=re.compile(".+[01]?[0-9]\-[0-3]?[0-9]\-[12][0-9].+|.+[01][0-9][0-3][0-9][12][0-9].+")): #The link to each unique event page includes the event date in 6-29-18 format OR 062918 format
