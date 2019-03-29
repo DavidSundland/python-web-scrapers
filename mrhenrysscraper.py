@@ -53,7 +53,7 @@ backupFileName = '../scraped/BackupFiles/MrHenrysScraped'
 
 
 # Scraping 1 month at a time, creating URL to match: http://www.mrhenrysdc.com/calendar/2019-05/
-for monthrange in range(0,1):  # look at this month & next; possibly look farther in future
+for monthrange in range(0,2):  # look at this month & next; possibly look farther in future
     month = ((today+relativedelta(months=+monthrange)).strftime("%m"))
     monthurl = "http://www.mrhenrysdc.com/calendar/" + (today+relativedelta(months=+monthrange)).strftime("%Y") + "-" + month + "/"
     html = urlopen(monthurl)
@@ -62,15 +62,20 @@ for monthrange in range(0,1):  # look at this month & next; possibly look farthe
         newPage = link.attrs["href"] #extract the links
         if newPage not in pages: #A new link has been found
             pages.add(newPage)
-            if "lipstick" in newPage or "boardgame" in newPage or "cheers-capitol" in newPage: #Recurring non-music events
+            if "lipstick" in newPage or "boardgame" in newPage or "cheers-capitol" in newPage or "dining-out" in newPage or "trivia" in newPage: #Recurring non-music events
                 continue
             mrHenrys.newhtml = newPage
             html = urlopen(mrHenrys.newhtml)
             print(newPage)
             bsObj = BeautifulSoup(html)
             mrHenrys.date = bsObj.find("abbr", {"class":"tribe-events-start-date"}).attrs["title"] #date in YYYY-MM-DD format
+            if datetime.datetime.strptime(mrHenrys.date, '%Y-%m-%d').weekday() == 3:
+                mrHenrys.genre = "Americana"  #Mr. Henry's almost always has Americana on Thursdays...
             pageanddate.add((newPage,mrHenrys.date,datetoday))  # Add link to list, paired with event date and today's date
             mrHenrys.artist = bsObj.find("h1", {"class":"tribe-events-single-event-title"}).get_text().strip()
+            if mrHenrys.artist == "Smith Jackson":
+                mrHenrys.artist = "SmithJackson"
+            mrHenrys.artist = mrHenrys.artist.replace("Double Header","")
             localList = scraperLibrary.getLocalList()
             if scraperLibrary.compactWord(mrHenrys.artist) in localList:
                 mrHenrys.local = "Yes"
@@ -78,38 +83,39 @@ for monthrange in range(0,1):  # look at this month & next; possibly look farthe
                 mrHenrys.local = ""
 
             longtime = bsObj.find("span", {"class":"tribe-event-date-start"}).get_text().strip()
-            starttime = re.findall("[0-9]{1,2}\:[0-5][0-9]",longtime)[0]
+            starttime = re.findall("[0-9]{1,2}\:[0-5][0-9]\s[aApP][mM]",longtime)[0]
             if starttime == "6:00 pm":  # events with 6:00 start time actually have 6:00 doors but 2 different event times
-                mrHenrys.starttime.extend("7:30 pm", "9:45 pm")
+                mrHenrys.starttime = ["7:30 pm", "9:45 pm"]
             else:
-                mrHenrys.starttime.append(starttime)
+                mrHenrys.starttime = [starttime]
             try: # Most events are free, but 1 or 2 events a month require tickets
                 mrHenrys.price = bsObj.find("span", {"class":"tribe-events-cost"}).get_text().strip()
-                links = bsObj.findall("a")
+                links = bsObj.findAll("a")
                 for link in links:
-                    if "brownpaper" in link or "bpt" in link:
+                    if "brownpaper" in link.attrs["href"] or "bpt" in link.attrs["href"]:
                         mrHenrys.ticketweb = link.attrs["href"]
                         break
+                    else:
+                        mrHenrys.ticketweb = ""
             except:
                 mrHenrys.price = 0
+                mrHenrys.ticketweb = ""
 
             mrHenrys.description = bsObj.find("div", {"class":"tribe-events-single-event-description"}).get_text().strip()
                 
             # [description, readmore] = 
             scraperLibraryOOP.descriptionTrim(mrHenrys,[], 800)
-            print(mrHenrys)
-            quit()
             
-            try: #Winery started using thumbnails for primary photo; larger photo is only within a slideshow script
-                scripts = bsObj.findAll("script")
-                for script in scripts:
-                    if '"full"' in script.get_text():
-                        scriptText = script.get_text()
-                artistpic = re.findall('(?:\"full\"\:\")(https\:.+?\.png)',scriptText)[0] #Result includes escape characters; must ensure that links still consistently function
+            if "doubleheader" in mrHenrys.artist.lower().replace(' ','') and "by&by" in mrHenrys.description.lower().replace(' ','') and "moosejaw" in mrHenrys.description.lower().replace(' ','') and len(mrHenrys.description) < 200:
+                mrHenrys.description = "Every 3rd Thursday of the Month, we are proud to present a Bluegrass double header, feature the bands By&By and Moosejaw.  By & By, 'your friendly neighborhood bluegrass band,' brings to roots music — and original material in the bluegrass tradition — 'a powerful lead singer, mesmerizing harmonies, and instrumental arrangements tight enough to bounce a nickel on.'  Moose Jaw is Prince George’s County, Maryland’s premiere bluegrass ensemble. Organized as a cooperative, they performing traditional, not so traditional, original and not so original tunes for varying audiences throughout the mid-Atlantic region."
+            
+            if mrHenrys.artist == "Rose Moraes":
+                mrHenrys.description = "Moraes has introduced thousands of music lovers to Brazilian music through performances in Switzerland, Poland, Brazil and the US, where she now resides. She has performed at Zinc Bar and The Iridium in New York City, for Artscape and the yearly sold-out Carnival concerts at Creative Alliance in Baltimore, and in countless Washington, D.C. venues and festivals such as D.C. Jazz Festival and Adams Morgan Day. She has two albums to her credit and collaborates on many musical projects."
+            try:
+                mrHenrys.artistpic = bsObj.find("div", {"class":"tribe-events-event-image"}).find("img").attrs["src"]
             except:
-                artistpic = bsObj.find("p", {"class":"product-image"}).find("img").attrs["src"]
-
-            ticketweb = newhtml
+                mrHenrys.artistpic = ""
+            
             for onetime in mrHenrys.starttime:
                 write1 = (mrHenrys.date, mrHenrys.genre, mrHenrys.artistpic, mrHenrys.local, mrHenrys.doors, mrHenrys.price, onetime, mrHenrys.newhtml, mrHenrys.artist, mrHenrys.venuelink, mrHenrys.venuename, mrHenrys.addressurl, mrHenrys.venueaddress, mrHenrys.description, mrHenrys.readmore, mrHenrys.musicurl, mrHenrys.ticketweb)
                 write2 = (mrHenrys.date, mrHenrys.genre, mrHenrys.artistpic, mrHenrys.local, mrHenrys.doors, mrHenrys.price, onetime, mrHenrys.newhtml, mrHenrys.artist, mrHenrys.venuelink, mrHenrys.venuename, mrHenrys.addressurl, mrHenrys.venueaddress, mrHenrys.description.encode('UTF-8'), mrHenrys.readmore, mrHenrys.musicurl, mrHenrys.ticketweb)
@@ -130,8 +136,8 @@ for monthrange in range(0,1):  # look at this month & next; possibly look farthe
 csvFile.close()
 backupCSV.close()
 
-fileName = '../scraped/usedlinks-winery.csv'
-backupFileName = '../scraped/BackupFiles/WineryUsedLinks'
+fileName = '../scraped/usedlinks-mrhenrys.csv'
+backupFileName = '../scraped/BackupFiles/MrHenrysUsedLinks'
 scraperLibrary.saveLinks(datetoday,fileName,backupFileName,pageanddate)
 
 if (UTFcounter == 0):

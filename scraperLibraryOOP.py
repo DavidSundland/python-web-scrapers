@@ -87,7 +87,7 @@ def descriptionTrim(object, deleteItems, numChars):
         pointer += 1
     object.readmore = object.artisturl
     if pointer > 1 and object.readmore == "":  
-        object.readmore = object.newHtml #Description shortened and no artist web found; offer link to event for more info
+        object.readmore = object.newhtml #Description shortened and no artist web found; offer link to event for more info
 
 def descriptionSplit(description, stripChar, splitChar, numChars):
     descriptionsentences = description.split(splitChar) #Let's split it into sentences!
