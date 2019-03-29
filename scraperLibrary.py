@@ -77,6 +77,7 @@ def startCsvs(today,fileName,backupFileName):
 def descriptionTrim(description, deleteItems, numChars, artistWeb, newHtml):
     description = description.replace("\n"," ").replace("\r"," ").strip() # Eliminates annoying carriage returns & trailing spaces
     description = re.sub('\s{2,}',' ',description)
+    description = description.replace(u'\xa0', u' ')
     for item in deleteItems:
         description = description.replace(item,"")
     splitChars = ["#$",". ","! ","? ",".' ",'." '] # sentence ends not always defined by a period; use of a lot of exclamation points or quotations can cause extra-long description...

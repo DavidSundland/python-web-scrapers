@@ -74,20 +74,20 @@ def startCsvs(today,fileName,backupFileName):
 ### RETURNS:
 # description - shortened and/or with certain strings removed, if applicable
 # readmore - additional info link
-def descriptionTrim(description, deleteItems, numChars, artistWeb, newHtml):
-    description = description.replace("\n"," ").replace("\r"," ").strip() # Eliminates annoying carriage returns & trailing spaces
-    description = re.sub('\s{2,}',' ',description)
+def descriptionTrim(object, deleteItems, numChars):
+    object.description = object.description.replace("\n"," ").replace("\r"," ").strip() # Eliminates annoying carriage returns & trailing spaces
+    object.description = re.sub('\s{2,}',' ',object.description)
+    object.description = object.description.replace(u'\xa0', u' ')
     for item in deleteItems:
-        description = description.replace(item,"")
+        object.description = object.description.replace(item,"")
     splitChars = ["#$",". ","! ","? ",".' ",'." '] # sentence ends not always defined by a period; use of a lot of exclamation points or quotations can cause extra-long description...
     pointer = 1
-    while len(description) > numChars and pointer <= 5: # If the description is too long...
-        description = descriptionSplit(description, splitChars[pointer-1], splitChars[pointer], numChars)
+    while len(object.description) > numChars and pointer <= 5: # If the description is too long...
+        object.description = descriptionSplit(object.description, splitChars[pointer-1], splitChars[pointer], numChars)
         pointer += 1
-    readmore = artistWeb
-    if pointer > 1 and readmore == "":  
-        readmore = newHtml #Description shortened and no artist web found; offer link to event for more info
-    return [description, readmore]
+    object.readmore = object.artisturl
+    if pointer > 1 and object.readmore == "":  
+        object.readmore = object.newHtml #Description shortened and no artist web found; offer link to event for more info
 
 def descriptionSplit(description, stripChar, splitChar, numChars):
     descriptionsentences = description.split(splitChar) #Let's split it into sentences!

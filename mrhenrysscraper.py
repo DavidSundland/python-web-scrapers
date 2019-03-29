@@ -92,19 +92,13 @@ for monthrange in range(0,1):  # look at this month & next; possibly look farthe
                         break
             except:
                 mrHenrys.price = 0
-            descriptionWad = bsObj.find("div", {"class":"value"})
-            descriptionParagraphs = descriptionWad.findAll("p")
-            description = ""
-            for paragraph in descriptionParagraphs:
-                if re.search("^\$[0-9]+",paragraph.get_text()): # get rid of paragraphs that merely provide pricing info
-                    continue
-                else:
-                    description += paragraph.get_text() + " "
 
-            if "must be 21 years of age" in description.lower(): # tasting events include this in description
-                continue
+            mrHenrys.description = bsObj.find("div", {"class":"tribe-events-single-event-description"}).get_text().strip()
                 
-            [description, readmore] = scraperLibrary.descriptionTrim(description, [], 800, artistweb, newhtml) #U Street gets shorter descriptions
+            # [description, readmore] = 
+            scraperLibraryOOP.descriptionTrim(mrHenrys,[], 800)
+            print(mrHenrys)
+            quit()
             
             try: #Winery started using thumbnails for primary photo; larger photo is only within a slideshow script
                 scripts = bsObj.findAll("script")
