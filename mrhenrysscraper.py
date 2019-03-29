@@ -32,7 +32,11 @@ class Scraped: # move to scraperLibraryOOP when scraper completed and tested
         self.musicurl = musicurl
         self.ticketweb = ticketweb
         self.artisturl = artisturl
-        
+
+    def __str__(self):
+        return str(self.__class__) + ": " + str(self.__dict__)
+
+#Note - at present, 1 object is created, and it is mutated for every event. While this will work (and fits with older, non-OOP scrapers), a better, more OOPy approach may be to have 1 array of objects or 1 object containing separate objects for each event...
 mrHenrys = Scraped("", "Jazz&Blues", "", "", " ", "", "", "", "", "http://www.mrhenrysdc.com/", "Mr. Henry's", "https://goo.gl/maps/D8WAijc1bi92", "601 Pennsylvania Ave. SE, Washington, DC 20007", "", "", "", "", "")
 
 usedLinksFile = '../scraped/usedlinks-mrhenry.csv'
@@ -52,11 +56,9 @@ backupFileName = '../scraped/BackupFiles/WineryScraped'
 for monthrange in range(0,2):  # look at this month & next; possibly look farther in future
     month = ((today+relativedelta(months=+monthrange)).strftime("%m")).lstrip("0")
     monthurl = "http://www.mrhenrysdc.com/calendar/" + (today+relativedelta(months=+monthrange)).strftime("%Y") + "-" + month.zfill(2) + "/"
-    print(monthurl)
-    quit()
     html = urlopen(monthurl)
     bsObj = BeautifulSoup(html)
-    for link in bsObj.findAll("a",href=re.compile(".+[01]?[0-9]\-[0-3]?[0-9]\-[12][0-9].+|.+[01][0-9][0-3][0-9][12][0-9].+")): #The link to each unique event page includes the event date in 6-29-18 format OR 062918 format
+    for link in bsObj.findAll("a", {"class":"url"}):
         newPage = link.attrs["href"] #extract the links
         if newPage not in pages: #A new link has been found
             pages.add(newPage)
@@ -64,27 +66,21 @@ for monthrange in range(0,2):  # look at this month & next; possibly look farthe
             html = urlopen(newhtml)
             print(newPage)
             bsObj = BeautifulSoup(html)
-            artistweb = newhtml
-            musicurl = ""
             try:
                 iframes = bsObj.findAll("iframe") # If there's a video, grab it and toss it into the "buy music" column.  BUT - skip iframes that don't contain youtubes
                 for onei in iframes:  
                     if "soundcloud" in onei.attrs["src"]:
-                        musicurl = onei.attrs["src"]
+                        mrHenrys.musicurl = onei.attrs["src"]
                         break  # If Soundcloud link found, snag it and quit
                     else:
                         if "youtube" in onei.attrs["src"]:
-                            musicurl = onei.attrs["src"]
+                            mrHenrys.musicurl = onei.attrs["src"]
                             break  # Grab first video that comes along
                         else:
-                            musicurl = ""  # In case there are iframes, but no videos
+                            mrHenrys.musicurl = ""  # In case there are iframes, but no videos
             except:
-                musicurl = ""
-            artistlong = bsObj.find("h1", {"class":"page-title"}).get_text().strip() #This gets the event name (including extra crap)
-            artist = artistlong.split(" - ")[0].strip() # event name is 1st part of title, separated from date by " - "
-            artist = artist.replace("An Evening with ","")
-            if "vinyasa" in artist.lower():
-                continue
+                mrHenrys.musicurl = ""
+            mrHenrys.artist = bsObj.find("h1", {"class":"tribe-events-single-event-title"}).get_text().strip()
             date = re.findall("[0-9]{1,2}\/[0-9]{1,2}\/[0-9]{1,2}",artistlong)[0]
             localList = scraperLibrary.getLocalList()
             if scraperLibrary.compactWord(artist) in localList:

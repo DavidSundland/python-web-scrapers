@@ -48,7 +48,6 @@ for monthrange in range(0,2):  # look at this month & next; possibly look farthe
             html = urlopen(newhtml)
             print(newPage)
             bsObj = BeautifulSoup(html)
-            artistweb = newhtml
             musicurl = ""
             try:
                 iframes = bsObj.findAll("iframe") # If there's a video, grab it and toss it into the "buy music" column.  BUT - skip iframes that don't contain youtubes
