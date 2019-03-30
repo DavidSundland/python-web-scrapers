@@ -37,11 +37,11 @@ writer.writerow(("DATE", "TIME", "PRICE", "ARTIST WEBSITE", "ARTIST", "DESCRIPTI
 #html = urlopen("http://hillcountry.com/dc/music-calendar/")
 #bsObj = BeautifulSoup(html)
 
-for link in bsObj.findAll("a", {"class":"event-link"}): #}) # # href=re.compile("^(http\:\/\/hillcountry\.com)")): #\/dc\/music\-calendar\/single\-event)")): #The link to each unique event page begins with "http://hillcountry.com/dc/music-calendar/single-event"
-    print("found a link:",link.attrs["href"])
-    newPage = link.attrs["href"] #extract the links
+for event in bsObj.findAll("div", {"class":"single-event"}): 
+    newPage = event.find("a", {"class":"event-link"}).attrs["href"] #extract the links
     if newPage not in pages: #A new link has been found
 #        counter += 1
+        print("found a link:",newPage)
         pages.add(newPage)
         newhtml = newPage
         try:
@@ -49,9 +49,8 @@ for link in bsObj.findAll("a", {"class":"event-link"}): #}) # # href=re.compile(
             bsObj = BeautifulSoup(html)
         except:
             bsObj = BeautifulSoup(requests.get(newhtml).text)
-        print(newhtml)
-       artist = bsObj.find("div", {"class":"headliners-name"}).get_text() # Event name
-       if "SOLD OUT" in artist.upper():
+        artist = bsObj.find("div", {"class":"headliners-name"}).get_text() # Event name
+        if "SOLD OUT" in artist.upper():
            continue
         try:
             ticketweb = bsObj.find("a", {"class":"ticket-button"}).attrs["href"] # Get the ticket sales URL; in a try/except in case tickets only at door or free
@@ -60,9 +59,10 @@ for link in bsObj.findAll("a", {"class":"event-link"}): #}) # # href=re.compile(
 #            ticketObj = BeautifulSoup(tickethtml)
 #            price = ticketObj.find("div", {"id":"price-range"}).get_text()
 #            price = price.strip() # Get rid of beginning and ending carriage returns
-#        except:
-#            ticketweb = ""
-#            price = "Free!"
+        except:
+            ticketweb = ""
+        price = event.find("span", {"class":"event-time"}).get_text()
+        print(newhtml,artist,ticketweb,price)
 #        print(artist, price)
 #        price = bsObj.find("div", {"class":"info_right"}).get_text() # Pulls the price, which could be a price range, plus bonus text.  MIGHT BE SOLD OUT
 #        if "FREE" in price or "Free" in price or "free" in price:
