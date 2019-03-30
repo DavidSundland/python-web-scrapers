@@ -94,7 +94,10 @@ for monthrange in range(0,2):  # look at this month & next; possibly look farthe
                 mrHenrys.price = bsObj.find("span", {"class":"tribe-events-cost"}).get_text().strip()
                 links = bsObj.findAll("a")
                 for link in links:
-                    if "brownpaper" in link.attrs["href"] or "bpt" in link.attrs["href"]:
+                    if "brownpaper" in link.attrs["href"]:
+                        ticketbase = link.attrs["href"]
+                        mrHenrys.ticketweb = re.findall('.+com',ticketbase)[0] + '/ref/3845895' + re.findall('\/event.+',ticketbase)[0]
+                    elif "bpt" in link.attrs["href"]:
                         mrHenrys.ticketweb = link.attrs["href"]
                         break
                     else:

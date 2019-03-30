@@ -86,7 +86,7 @@ for pointer in range(1,4):  #events are spread over multiple pages
             description = ""
             bands = bsObj.findAll("div", {"class":"event-description-detail"})
             for band in bands:
-                description += band.get_text().strip()
+                description += band.get_text().strip() + " "
                 if len(description) > 800:
                     break
                     
