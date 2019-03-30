@@ -77,6 +77,8 @@ for pointer in range(1,4):  #events are spread over multiple pages
 
             timelong = bsObj.find("span", {"class":"show-time"}).get_text()
             starttime = re.findall("[0-9]{1,2}\:[0-9]{1,2}\s*[pPaA][mM]",timelong)[0]
+            if starttime == '8:30AM' and 'karaoke' in artist.lower():
+                starttime = '8:30PM'  #some recurring events have a typo (da karaoke ain't in the morning)
             try:
                 artistweb = bsObj.find("a", {"class":"artist-link"}).attrs["href"] 
             except:
@@ -91,8 +93,13 @@ for pointer in range(1,4):  #events are spread over multiple pages
             [description, readmore] = scraperLibrary.descriptionTrim(description, [], 800, artistweb, newhtml) #U Street gets shorter descriptions
             
             musicurl = ""
-            artistpic = "" #images are only in CSS, as background images.  Will investigate retrieval options...
             
+            try:
+                style = bsObj.find("div", {"class":"image-container"}).attrs["style"]
+                artistpic = re.findall('http.+[jp][pn]g',style)[0]
+            except:
+                artistpic = ""
+                
             write1 = (date, genre, artistpic, local, doors, price, starttime, newhtml, artist, venuelink, venuename, addressurl, venueaddress, description, readmore, musicurl, ticketweb)
             write2 = (date, genre, artistpic, local, doors, price, starttime, newhtml, artist, venuelink, venuename, addressurl, venueaddress, description.encode('UTF-8'), readmore, musicurl, ticketweb)
             write3 = (date, genre, artistpic, local, doors, price, starttime, newhtml, artist.encode('UTF-8'), venuelink, venuename, addressurl, venueaddress, description.encode('UTF-8'), readmore, musicurl, ticketweb)
