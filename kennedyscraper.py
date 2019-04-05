@@ -1,5 +1,4 @@
 #Scrapes Kennedy Center events, but NOT MILLENNIUM STAGE.
-# Future - add "Local" variable, adding in NSO, etc., automatically
 
 from urllib.request import urlopen #for pulling info from websites
 import requests #a substitute for urllib, which was not working on 3/19

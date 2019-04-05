@@ -72,7 +72,7 @@ for monthrange in range(0,2):  # look at this month & next; possibly look farthe
             if datetime.datetime.strptime(mrHenrys.date, '%Y-%m-%d').weekday() == 3:
                 mrHenrys.genre = "Americana"  #Mr. Henry's almost always has Americana on Thursdays...
             else:
-                mrHenrys.genre = "Jazz&Blues"
+                mrHenrys.genre = "Jazz & Blues"
             pageanddate.add((newPage,mrHenrys.date,datetoday))  # Add link to list, paired with event date and today's date
             mrHenrys.artist = bsObj.find("h1", {"class":"tribe-events-single-event-title"}).get_text().strip()
             if mrHenrys.artist == "Smith Jackson":
