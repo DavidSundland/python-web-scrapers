@@ -2,6 +2,37 @@ import csv #comma-separated values
 import re
 import datetime
 
+class Scraped: # move to scraperLibraryOOP when scraper completed and tested
+    def __init__(self, date, genre, artistpic, local, doors, price, starttime, newhtml, artist, venuelink, venuename, addressurl, venueaddress, description, readmore, musicurl, ticketweb, artisturl):
+        self.date = date
+        self.genre = genre
+        self.artistpic = artistpic
+        self.local = local
+        self.doors = doors
+        self.price = price
+        self.starttime = starttime
+        self.newhtml = newhtml
+        self.artist = artist
+        self.venuelink = venuelink
+        self.venuename = venuename
+        self.addressurl = addressurl
+        self.venueaddress = venueaddress
+        self.description = description
+        self.readmore = readmore
+        self.musicurl = musicurl
+        self.ticketweb = ticketweb
+        self.artisturl = artisturl
+
+    def __str__(self):
+        return str(self.__class__) + ": " + str(self.__dict__)
+        
+#    def keys(self):
+#        return('self', 'date', 'genre', 'artistpic', 'local', 'doors', 'price', 'starttime', 'newhtml', 'artist', 'venuelink', 'venuename', 'addressurl', 'venueaddress', 'description', 'readmore', 'musicurl', 'ticketweb', 'artisturl')
+    
+#    def _getitem__(self,key):
+#        return key
+        
+
 
 ### previousScrape - creates list of scraped URLs from list saved during previous scrape
 ## EXPECTED INPUTS:

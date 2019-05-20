@@ -76,7 +76,7 @@ for link in bsObj.findAll("a",href=re.compile("^(\/event\/)")): #The link to eac
             price = "Free!"
         artist = bsObj.find("h1", {"class":"headliners"}).get_text().strip() # Event name
 
-        skippers = ["sold out","mixtape","peach pit","karaoke","liberation dance party","astronomy on tap","nerd nite","90s tracks","wig & disco","daft lunch","dark & stormy","show moving to","closed for private event"]
+        skippers = ["sold out","mixtape","peach pit","karaoke","liberation dance party","astronomy on tap","nerd nite","90s tracks","wig & disco","daft lunch","dark & stormy","show moving to","closed for private event","vinyl head"]
         skip = False
         for skipper in skippers:
             if skipper in artist.lower():

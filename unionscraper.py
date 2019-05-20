@@ -61,11 +61,14 @@ for link in bsObj.findAll("a",href=re.compile("^(\/event\/)")): #The link to eac
             artistweb = bsObj.find("li", {"class":"web"}).find("a").attrs["href"]
         except:
             artistweb = newhtml
+        artist = artist.replace('Free Acoustic','Acoustic')
         try:
             price = bsObj.find("h3", {"class":"price-range"}).get_text().strip() # Pulls the price, which could be a price range...
         except:
             print("Is ", newhtml, "free?")
             price = "Free!"
+        price = re.sub('(?i)general\sadmission\s*\-*\s*','',price)
+        price = re.sub('(?i)ga\s*\-*\s*','',price)
         try:
             description = bsObj.find("div", {"class":"bio"}).get_text().strip()
         except:

@@ -1,6 +1,3 @@
-#Scrapes Mr. Henry's events, using - http://www.mrhenrysdc.com/calendar/2019-04/ 
-
-
 from urllib.request import urlopen #for pulling info from websites
 from bs4 import BeautifulSoup #for manipulating info pulled from websites
 import re #regular expressions
@@ -62,7 +59,7 @@ for monthrange in range(0,2):  # look at this month & next; possibly look farthe
         newPage = link.attrs["href"] #extract the links
         if newPage not in pages: #A new link has been found
             pages.add(newPage)
-            if "lipstick" in newPage or "boardgame" in newPage or "cheers-capitol" in newPage or "dining-out" in newPage or "trivia" in newPage: #Recurring non-music events
+            if "lipstick" in newPage or "boardgame" in newPage or "cheers-capitol" in newPage or "dining-out" in newPage or "trivia" in newPage or "happy-hour" in newPage: #Recurring non-music events
                 continue
             mrHenrys.newhtml = newPage
             html = urlopen(mrHenrys.newhtml)

@@ -70,7 +70,7 @@ for genrecat in genres:
                 eventObj = BeautifulSoup(eventhtml)
             except:
                 eventObj = BeautifulSoup(requests.get(newhtml).text)
-            artistweb = ""
+            artistweb = newhtml
             year = today.year
             datelong = eventObj.find("h2", {"class":"event-date"}).get_text().strip()
             date = re.findall("[JFMASOND][a-z]+\s+[0-9]{1,2}\,\s+20[12][0-9]", datelong)[0]

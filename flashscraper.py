@@ -62,13 +62,15 @@ for link in bsObj.findAll("a",href=re.compile("^(pages\/details)")): #The link t
     if newPage not in pages: #A new link has been found
         counter += 1
         newhtml = "http://www.flashdc.com/" + newPage
-#        print(newhtml)
+        print(newhtml)
         try:
             html = urlopen(newhtml)
             bsObj = BeautifulSoup(html)
         except:
             bsObj = BeautifulSoup(requests.get(newhtml).text)
         datelong = bsObj.find("title").get_text() # This includes the name of the artist and "at Flash"
+        if "not in a correct format" in datelong:  # Page load errors yield a page with a title that includes this text
+            continue
         date = re.findall("[A-Z][a-z]+\s+[0-9]{1,2}\,\s+[0-9]{4}", datelong)[0] # This pulls out the date
         dadate = datetime.datetime.strptime((date.strip()), '%B %d, %Y') #Date in table is in day month day, year format.
         if dadate.date() > today+datetime.timedelta(days=61):  #If event is more than 2 months away, skip it for now (a lot can happen in 2 months):
@@ -77,8 +79,10 @@ for link in bsObj.findAll("a",href=re.compile("^(pages\/details)")): #The link t
         if "[OFF]" in artist or "[Off]" in artist or "(Off)" in artist or "(OFF)" in artist:
             continue
         artist = artist.replace("[in the Green Room]","")
-        artist = re.sub('[\{\[\(][oO]pen[\s\-](2|to)[\s\-][cC]lose[\s\-]*[sS]*e*t*[\}\]\)]','',artist) {Open-2-Close}
+        artist = re.sub('[\{\[\(][oO]pen[\s\-](2|to)[\s\-][cC]lose[\s\-]*[sS]*e*t*[\}\]\)]','',artist)
         artist = re.sub('\[[lL][iI][vV][eE]\]','',artist)
+        artist = re.sub('F[oO][cC][uU][sS]\:*\s','',artist)
+        artist = artist.replace('Sunday Love: ','')
         artistweb = ""
         musicurl = ""
         gotartistlink = False
@@ -144,7 +148,7 @@ for link in bsObj.findAll("a",href=re.compile("^(pages\/details)")): #The link t
         price = "Check ticket link for pricing"  # Flash doesn't list the ticket price on their website. They use a variety of ticket sales sites, but Ticketfly is their primary site, and its security blocks scraping.
         if ticketweb == "#":
             ticketweb = newhtml
-        print("about to print, date = ", date, "artist = ", artist)
+#        print("about to print, date = ", date, "artist = ", artist)
         try:  # Might crash with weird characters.
             writer.writerow((date, genre, artistpic, local, doors, price, starttime, newhtml, artist, venuelink, venuename, addressurl, venueaddress, description, readmore, musicurl, ticketweb))
             backupwriter.writerow((date, genre, artistpic, local, doors, price, starttime, newhtml, artist, venuelink, venuename, addressurl, venueaddress, description, readmore, musicurl, ticketweb))

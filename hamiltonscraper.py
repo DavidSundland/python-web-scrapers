@@ -106,9 +106,9 @@ for link in bsObj.findAll("a",href=re.compile("^(\/event\/)")): #The link to eac
         except: # No price range means that it's free (I hope)
             price = "Free!"
         artist = eventObj.find("h1", {"class":"headliners summary"}).get_text().strip()
+        artist = re.sub('(Free\s)*(Late\sNight\s)(Music\s)*in\s[tT]he\sLoft\s[wW]ith\s','',artist)
         if artist.upper()=="TBA":
             continue
-        artist = re.sub('(Free\s)*(Late\sNight\s)(Music\s)*in\s[tT]he\sLoft\s[wW]ith\s','',artist)
         artist = artist.replace(" (Night One)","").replace(" (Night Two)","")
         if scraperLibrary.compactWord(artist) in localList:
             local = "Yes"
@@ -172,6 +172,10 @@ for link in bsObj.findAll("a",href=re.compile("^(\/event\/)")): #The link to eac
         elif "wanted man" in artist.lower() and len(description) < 100:
             description = "Wanted Man - Rock n Roll from our nation's capital, featuring: Kenny Pirog - Guitar, Vocals, Triangle; Rick Irby - Drums, Tambourine, Vocals; Anthony Pirog - Guitar; Scoops - Bass, Soul Brother; Johnny Fantastic - Bass, Vocal Harmonies.  Virginia Beach’s Bennett Wales & the Relief are living proof that raw talent, ambition & honesty can still prevail in an ailing music industry. The bands musical discoveries take flight with a compelling combination of rich pop layers & mixed stylings of rhythm & blues, rock & Americana. By melding hook-filled melody within groove-able rhythms, Bennett Wales & the Relief show their ability to compact a vast array of influence & experience into a singular & distinct sound.  Together the quintet provides a vast amount of influences & gift a broadened door of multiple genre stylings to music enthusiasts & listeners alike."
             musicurl = "https://wantedman.bandcamp.com/"
+        elif "ashleigh chevalier" in artist.lower() and len(description) < 100:
+            description = "Ashleigh Chevalier is free spirited , bold and gritty, sweet and soul filled. Her genre bending vocals beckon wanderers ftom the streets , her songs groove the jammiest of grooves, her dynamic energetic stage performances stop audiences everywhere she performs. Ashleigh will release her next album Burnin’ Down Fall of of 2016. From the Soles, her debut album produced by Grammy Winner Jon Carroll, was nominated for a Washington Area Music Association WAMMIE award for Best Recording in its genre."
+            musicurl = "http://www.gravattentertainment.com/content/ashleigh-chevalier-band"
+            genre = "Americana"
         else:
             genre = "Rock & Pop"
 

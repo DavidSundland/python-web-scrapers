@@ -67,10 +67,8 @@ backupwriter.writerow(("DATE", "GENRE", "FEATURE?", "LOCAL?", "DOORS?", "PRICE",
 html = "https://www.930.com/#upcoming-shows-container"
 firstBS = BeautifulSoup(requests.get(html).text)
 
-print("got initial bs; bs: ", firstBS)
 for link in firstBS.findAll("a",href=re.compile("^(\/event\/)")): #The link to each unique event page begins with "/event/"
     newPage = link.attrs["href"] #extract the links
-    print(newPage)
     if newPage not in pages: #A new link has been found
         counter += 1
         newhtml = "https://www.930.com" + newPage
@@ -95,6 +93,7 @@ for link in firstBS.findAll("a",href=re.compile("^(\/event\/)")): #The link to e
             time = bsObj.find("span", {"class":"start"}).get_text().strip()  #No extraneous info in this'un
             doors = ""  #Shows actual start time, not doors open time
         price = bsObj.find("h3", {"class":"price-range"}).get_text().strip() # Pulls the price, which could be a price range
+        price = re.sub('day of show','D.O.S.',price.lower())
         try:  # Hopefully if this info is missing, it's cuz not yet in site, not because of scraping error
             artist = bsObj.find("span", {"class":"artist-name"}).get_text() # Event / top artist name  NOTE - "div" of "artist-headline" also an option
         except:
@@ -103,6 +102,8 @@ for link in firstBS.findAll("a",href=re.compile("^(\/event\/)")): #The link to e
             except:
                 print("Skipped", date, time)
                 continue
+        if "no scrubs" in artist.lower():
+            continue
         try:
             musicurl = bsObj.find("iframe").attrs["src"] # If there's a video, grab it and toss it into the "buy music" column
         except:

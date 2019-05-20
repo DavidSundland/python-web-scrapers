@@ -11,7 +11,7 @@ import scraperLibrary #custom library for venue site scraping
 
 
 usedLinksFile = '../scraped/usedlinks-hillcountry.csv'
-dateFormat = '%m/%d/%Y'
+dateFormat = '%Y-%m-%d'
 numDays = 30
 linkCheckUrl = ''
 genre = "Americana"
@@ -62,7 +62,7 @@ for pointer in range(1,4):  #events are spread over multiple pages
             if date > today+datetime.timedelta(days=61):  #If event is more than 2 months away, skip it for now (a lot can happen in 2 months!):
                 continue
             artist = bsObj.find("div", {"class":"headliners-name"}).get_text() # Event name
-            if "SOLD OUT" in artist.upper():
+            if "SOLD OUT" in artist.upper() or "CLUB CLOSED" in artist.upper():
                continue
             localList = scraperLibrary.getLocalList()
             if scraperLibrary.compactWord(artist) in localList:
