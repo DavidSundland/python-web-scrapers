@@ -56,17 +56,13 @@ for event in bsObj.findAll("abbr", {"class":"url"}):
         except:
             bsObj = BeautifulSoup(requests.get(newhtml).text)
         datelong = bsObj.find("title").get_text()
-#        year = today.year
         date = re.findall("[JFMASOND][a-z]+\s[0-9]{1,2}[snrt][tdh]\,\s20[12][0-9]", datelong)[0]
-        print("event date:",date)
-        continue
-        date = datetime.datetime.strptime(date + "/" + str(year), '%m/%d/%Y').date() 
-        if date < today - datetime.timedelta(days=30):  #If adding the year results in a date more than a month in the past, then event must be in the next year
-            date = datetime.datetime.strptime(date + "/" + str(year+1), '%m/%d/%Y').date()
-        if date > today+datetime.timedelta(days=61):  #If event is more than 2 months away, skip it for now (a lot can happen in 2 months!):
+        date = re.sub('st|nd|rd|th','',date)
+        dadate = datetime.datetime.strptime((date.strip()), '%B %d, %Y')
+        if dadate.date() > today+datetime.timedelta(days=61):  #If event is more than 2 months away, skip it for now (a lot can happen in 2 months!):
             continue
-        artist = bsObj.find("div", {"class":"headliners-name"}).get_text() # Event name
-        if "SOLD OUT" in artist.upper() or "CLUB CLOSED" in artist.upper():
+        artist = bsObj.find("h1", {"class":"headliners"}).get_text()
+        if "SOLD OUT" in artist.upper() or "CLUB CLOSED" in artist.upper() or "PRIVATE EVENT" in artist.upper():
            continue
         localList = scraperLibrary.getLocalList()
         if scraperLibrary.compactWord(artist) in localList:
@@ -74,36 +70,47 @@ for event in bsObj.findAll("abbr", {"class":"url"}):
         else:
             local = ""
         try:
-            ticketweb = bsObj.find("a", {"class":"ticket-button"}).attrs["href"] # Get the ticket sales URL; in a try/except in case tickets only at door or free
+            ticketweb = bsObj.find("a", {"class":"tickets"}).attrs["href"] 
         except:
             ticketweb = ""
-        price = event.find("span", {"class":"event-price"}).get_text()
-
-        timelong = bsObj.find("span", {"class":"show-time"}).get_text()
+        try:
+            price = bsObj.find("p", {"class":"event-tickets-price"}).get_text()
+        except:
+            print("found no price; free?")
+            price = "No cover"
+        timelong = bsObj.find("span", {"class":"start"}).get_text()
         starttime = re.findall("[0-9]{1,2}\:[0-9]{1,2}\s*[pPaA][mM]",timelong)[0]
         if starttime == '8:30AM' and 'karaoke' in artist.lower():
             starttime = '8:30PM'  #some recurring events have a typo (da karaoke ain't in the morning)
         try:
-            artistweb = bsObj.find("a", {"class":"artist-link"}).attrs["href"] 
+            artistweb = bsObj.find("li", {"class":"external-links-site"}).find("a").attrs["href"] 
         except:
-            artistweb = ""
+            try:
+                artistweb = bsObj.find("li", {"class":"external-links-facebook"}).find("a").attrs["href"] 
+            except:
+                artistweb = ""
         description = ""
-        bands = bsObj.findAll("div", {"class":"event-description-detail"})
+        bands = bsObj.findAll("p", {"class":"description"})
         for band in bands:
             description += band.get_text().strip() + " "
             if len(description) > 800:
                 break
                 
-        [description, readmore] = scraperLibrary.descriptionTrim(description, [], 800, artistweb, newhtml) #U Street gets shorter descriptions
-        
-        musicurl = ""
+        [description, readmore] = scraperLibrary.descriptionTrim(description, [], 800, artistweb, newhtml) 
         
         try:
-            style = bsObj.find("div", {"class":"image-container"}).attrs["style"]
-            artistpic = re.findall('http.+[jp][pn]g',style)[0]
+            musicurl = bsObj.find("a", {"class":"playlist-video"}).attrs["href"]
         except:
-            artistpic = ""
-            
+            musicurl = ""
+        
+        try:
+            artistpic = bsObj.find("video").attrs["poster"]
+        except:
+            try:
+                artistpic = bsObj.find("div", {"id":"artist-image"}).find("img").attrs["src"]
+            except:
+                artistpic = ""
+           
         write1 = (date, genre, artistpic, local, doors, price, starttime, newhtml, artist, venuelink, venuename, addressurl, venueaddress, description, readmore, musicurl, ticketweb)
         write2 = (date, genre, artistpic, local, doors, price, starttime, newhtml, artist, venuelink, venuename, addressurl, venueaddress, description.encode('UTF-8'), readmore, musicurl, ticketweb)
         write3 = (date, genre, artistpic, local, doors, price, starttime, newhtml, artist.encode('UTF-8'), venuelink, venuename, addressurl, venueaddress, description.encode('UTF-8'), readmore, musicurl, ticketweb)
