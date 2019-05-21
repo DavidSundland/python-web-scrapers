@@ -40,7 +40,6 @@ if answer == "y" or answer == "Y":
 counter = 0 # A counter to track progress
 UTFcounter = 0 # Counter for number of encoding problems
 
-local = ""  # Add test for local in future
 doors = " "
 genre = "Rock & Pop"  # Add test for genre in future
 venuelink = "http://www.gypsysallys.com/"
@@ -95,6 +94,11 @@ for link in bsObj.findAll("a",href=re.compile("^(\/event\/)")): #The link to eac
             genre = "Potpourri"
         if "closed" in artist.lower() in artist: # Skip closed private events
             continue
+        localList = scraperLibrary.getLocalList()
+        if scraperLibrary.compactWord(artist) in localList:
+            local = "Yes"
+        else:
+            local = ""
         try:
             artistweb = bsObj.find("li", {"class":"web"}).find("a").attrs["href"]  #THIS finds the first instance of a li with a class of "web", then digs deeper, finding the first instance w/in that li of a child a, and pulls the href.  BUT - since some artists may not have link, using try/except
         except:
